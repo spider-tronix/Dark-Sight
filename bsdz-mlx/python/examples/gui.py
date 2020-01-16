@@ -1,15 +1,11 @@
 import time
-from datetime import datetime
 
 import matplotlib as mpl
 import numpy as np
 import pygame
+from MLX90640 import API, ffi, temperature_data_to_ndarray, hertz_to_refresh_rate
 from PIL import Image
 from matplotlib import cm
-
-from MLX90640 import API, ffi, temperature_data_to_ndarray, hertz_to_refresh_rate
-import cv2
-from examples.custom import captureImages, renameFiles, picID
 
 
 def td_to_image(f, cmap):
@@ -94,13 +90,7 @@ def main_loop(filename):
 
         pygame.display.update()
 
-        k = cv2.waitKey(10)
-        if k == 32:
-            shot_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            captureImages()
-            renameFiles(picID, shot_time)
         pygame.image.save(display, filename + '.JPG')
-        print("Saved the thermal image")
 
 
 if __name__ == "__main__":
