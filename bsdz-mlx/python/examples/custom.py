@@ -59,7 +59,7 @@ def createSaveFolder(save_location):
 
 def captureImages():
     gp(triggerCommand)
-    sleep(3)
+    sleep(5)
     gp(downloadCommand)
     gp(clearCommand)
 
@@ -128,20 +128,14 @@ class ThermalFeed:
 
 def main():
     thermalcam = ThermalFeed()
+    cv2.namedWindow("Shutter Button (_)")
     while True:
         thermalcam.thermal_update()
         k = cv2.waitKey(10)
         if k == 32:
+            print("Taking Pics!")
             shot_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             gp(raw_and_large)
-            gp(short_exp)
-            captureImages()
-            renameFiles(picID, shot_time + "raw_short")
-            gp(long_exp)
-            captureImages()
-            renameFiles(picID, shot_time + "raw_long")
-
-            gp(small)
             gp(short_exp)
             captureImages()
             renameFiles(picID, shot_time + "small_short")
@@ -149,8 +143,17 @@ def main():
             captureImages()
             renameFiles(picID, shot_time + "small_long")
 
+            gp(small)
+            gp(short_exp)
+            captureImages()
+            renameFiles(picID, shot_time + "raw_short")
+            gp(long_exp)
+            captureImages()
+            renameFiles(picID, shot_time + "raw_long")
+
             pygame.image.save(thermalcam.display, "thermal" + '.JPG')
             renameFiles(picID, shot_time + "thermal")
+            break
 
 
 if __name__ == '__main__':
@@ -158,7 +161,7 @@ if __name__ == '__main__':
     shot_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     folder_name = shot_time + picID
-    save_location = "./Pics" + folder_name
+    save_location = "./Pics/" + folder_name
 
     createSaveFolder(save_location)
 
