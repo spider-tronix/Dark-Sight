@@ -9,11 +9,11 @@ from time import sleep
 import matplotlib as mpl
 import numpy as np
 import pygame
-from sh import gphoto2 as gp
+from MLX90640 import API, ffi, hertz_to_refresh_rate, temperature_data_to_ndarray
 from PIL import Image
 from matplotlib import cm
+from sh import gphoto2 as gp
 
-from MLX90640 import API, ffi, hertz_to_refresh_rate, temperature_data_to_ndarray
 from config import *
 
 
@@ -65,7 +65,7 @@ def captureImages():
 
 
 def renameFiles(ID, shot_time):
-    for filename in os.listdir("."):
+    for filename in os.listdir("examples"):
         if len(filename) < 13:
             if filename.endswith(".JPG"):
                 os.rename(filename, (shot_time + ID + ".JPG"))
@@ -91,13 +91,13 @@ class ThermalFeed:
         # mlx90640 settings
         self.MLX_I2C_ADDR = 0x33
         self.hertz_default = 8
-        API.SetRefreshRate(MLX_I2C_ADDR, hertz_to_refresh_rate[self.hertz_default])
-        API.SetChessMode(MLX_I2C_ADDR)
+        API.SetRefreshRate(self.MLX_I2C_ADDR, hertz_to_refresh_rate[self.hertz_default])
+        API.SetChessMode(self.MLX_I2C_ADDR)
 
         # Extract calibration data from EEPROM and store in RAM
         self.eeprom_data = ffi.new("uint16_t[832]")
         self.params = ffi.new("paramsMLX90640*")
-        API.DumpEE(MLX_I2C_ADDR, self.eeprom_data)
+        API.DumpEE(self.MLX_I2C_ADDR, self.eeprom_data)
         API.ExtractParameters(self.eeprom_data, self.params)
 
         self.TA_SHIFT = 8  # the default shift for a MLX90640 device in open air
@@ -113,7 +113,7 @@ class ThermalFeed:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        API.GetFrameData(MLX_I2C_ADDR, self.frame_buffer)
+        API.GetFrameData(self.MLX_I2C_ADDR, self.frame_buffer)
         self.now = time.monotonic()
         self.diff = self.now - self.last
         self.last = self.now
@@ -141,18 +141,18 @@ def main():
             gp(raw_and_large)
             gp(short_exp)
             captureImages()
-            renameFiles(picID, shot_time + "small_short")
-            gp(long_exp)
-            captureImages()
-            renameFiles(picID, shot_time + "small_long")
-
-            gp(small)
-            gp(short_exp)
-            captureImages()
             renameFiles(picID, shot_time + "raw_short")
             gp(long_exp)
             captureImages()
             renameFiles(picID, shot_time + "raw_long")
+
+            gp(small)
+            gp(short_exp)
+            captureImages()
+            renameFiles(picID, shot_time + "small_short")
+            gp(long_exp)
+            captureImages()
+            renameFiles(picID, shot_time + "small_long")
 
             pygame.image.save(thermalcam.display, "thermal" + '.JPG')
             renameFiles(picID, shot_time + "thermal")
