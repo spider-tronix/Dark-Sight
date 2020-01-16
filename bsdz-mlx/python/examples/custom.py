@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from time import sleep
 
-import cv2
+# import cv2
 import matplotlib as mpl
 import numpy as np
 import pygame
@@ -14,7 +14,7 @@ from PIL import Image
 from matplotlib import cm
 
 from MLX90640 import API, ffi, hertz_to_refresh_rate, temperature_data_to_ndarray
-from examples.config import *
+from config import *
 
 
 def td_to_image(f, cmap):
@@ -128,11 +128,14 @@ class ThermalFeed:
 
 def main():
     thermalcam = ThermalFeed()
-    cv2.namedWindow("Shutter Button (_)")
+    # cv2.namedWindow("Shutter Button (_)")
     while True:
         thermalcam.thermal_update()
-        k = cv2.waitKey(10)
-        if k == 32:
+
+        # k = cv2.waitKey(10)
+        k = pygame.event.get()
+        # if k == 32:
+        if k == 2:
             print("Taking Pics!")
             shot_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             gp(raw_and_large)
