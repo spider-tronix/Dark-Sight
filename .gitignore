@@ -1,3 +1,4 @@
 *.JPG
 *.CR2
 .idea
+__pycache__

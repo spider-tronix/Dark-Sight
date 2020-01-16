@@ -1,6 +1,6 @@
-import cffi
 from pathlib import Path
 
+import cffi
 import numpy as np
 
 lib_path = Path(__file__).parent / "_MLX90640.cpython-37m-arm-linux-gnueabihf.so"

@@ -1,7 +1,4 @@
-import sys
 import time
-
-import numpy as np
 
 from MLX90640 import API, ffi, temperature_data_to_ndarray, hertz_to_refresh_rate
 
@@ -14,8 +11,8 @@ API.SetRefreshRate(MLX_I2C_ADDR, hertz_to_refresh_rate[hertz])
 API.SetChessMode(MLX_I2C_ADDR)
 
 # POR
-time.sleep(.08) # wait 80ms
-time.sleep(2/hertz) # delay det by refresh rate
+time.sleep(.08)  # wait 80ms
+time.sleep(2 / hertz)  # delay det by refresh rate
 
 # Extract calibration data from EEPROM and store in RAM
 eeprom_data = ffi.new("uint16_t[832]")
@@ -31,7 +28,7 @@ for i in range(5):
 
 # TODO: if absolute - wait 4 mins
 
-TA_SHIFT = 8 # the default shift for a MLX90640 device in open air
+TA_SHIFT = 8  # the default shift for a MLX90640 device in open air
 emissivity = 0.95
 
 frame_buffer = ffi.new("uint16_t[834]")
@@ -43,7 +40,7 @@ while True:
     API.GetFrameData(MLX_I2C_ADDR, frame_buffer);
     now = time.monotonic()
     diff = now - last
-    print("Calc Hz: %s" % (1/diff))
+    print("Calc Hz: %s" % (1 / diff))
     last = now
 
     # reflected temperature based on the sensor
@@ -56,6 +53,3 @@ while True:
     print("Subpage no: %s" % API.GetSubPageNumber(frame_buffer))
 
     print(temperature_data_to_ndarray(image_buffer))
-
-
-

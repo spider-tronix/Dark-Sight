@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 
-import os
-import sys
-
 from setuptools import setup, Extension
 from setuptools.command.build_py import build_py
 from setuptools.command.sdist import sdist
-from distutils.spawn import find_executable
-from glob import glob
 
 
 # Fix so that build_ext runs before build_py
@@ -29,6 +24,7 @@ class sdist_ext_first(sdist):
         self.run_command("build_ext")
         return sdist.run(self)
 
+
 classifiers = ['Development Status :: 4 - Beta',
                'Operating System :: POSIX :: Linux',
                'License :: OSI Approved :: MIT License',
@@ -44,11 +40,11 @@ _MLX90640 = Extension(
 )
 
 setup(
-    name = 'MLX90640',
-    version = '0.1.0',
-    classifiers = classifiers,
-    ext_modules = [ _MLX90640 ],
-    py_modules = ["MLX90640"],
+    name='MLX90640',
+    version='0.1.0',
+    classifiers=classifiers,
+    ext_modules=[_MLX90640],
+    py_modules=["MLX90640"],
     install_requires=['cffi', 'numpy'],
-    cmdclass = {'build_py' : build_py_ext_first, 'sdist' : sdist_ext_first},
+    cmdclass={'build_py': build_py_ext_first, 'sdist': sdist_ext_first},
 )
