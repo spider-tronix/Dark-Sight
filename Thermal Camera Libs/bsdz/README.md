@@ -1,0 +1,1 @@
+# All credits go to [BSDZ](https://github.com/bsdz/mlx90640-library) and [Melexis](https://github.com/melexis/mlx90640-library)
