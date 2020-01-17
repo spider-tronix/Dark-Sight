@@ -53,7 +53,7 @@ int main(){
         state = !state;
         //printf("State: %d \n", state);
         MLX90640_GetFrameData(MLX_I2C_ADDR, frame);
-        // MLX90640_InterpolateOutliers(frame, eeMLX90640);
+        MLX90640_InterpolateOutliers(frame, eeMLX90640);
         eTa = MLX90640_GetTa(frame, &mlx90640);
         subpage = MLX90640_GetSubPageNumber(frame);
         MLX90640_CalculateTo(frame, &mlx90640, emissivity, eTa, mlx90640To);
@@ -62,12 +62,15 @@ int main(){
         MLX90640_BadPixelsCorrection((&mlx90640)->outlierPixels, mlx90640To, 1, &mlx90640);
 
         printf("Subpage: %d\n", subpage);
-        //MLX90640_SetSubPage(MLX_I2C_ADDR,!subpage);
+        MLX90640_SetSubPage(MLX_I2C_ADDR,!subpage);
 
         for(int x = 0; x < 32; x++){
             for(int y = 0; y < 24; y++){
                 //std::cout << image[32 * y + x] << ",";
                 float val = mlx90640To[32 * (23-y) + x];
+
+                
+
                 if(val > 99.99) val = 99.99;
                 if(val > 32.0){
                     printf(ANSI_COLOR_MAGENTA FMT_STRING ANSI_COLOR_RESET, val);
