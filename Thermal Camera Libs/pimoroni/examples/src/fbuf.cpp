@@ -157,17 +157,36 @@ int main()
         std::this_thread::sleep_for(std::chrono::microseconds(frame_time - elapsed));
     }
 
-    // ifstream in("/run/user/1000/gvfs/smb-share:server=192.168.43.239,share=share/filename.txt");
-    // in.read()
     string filename;
-    fstream new_file; 
+    fstream new_file;
     new_file.open("/run/user/1000/gvfs/smb-share:server=192.168.43.239,share=share/filename.txt", ios::in);
-    new_file>>filename;
+    new_file >> filename;
     newfile.close();
 
     fstream out_file;
     out_file.open(filename, ios::out);
-    out_file<<temper_readings;
+
+    for (int i = 0; i < 24; ++i)
+    {
+        for (int j = 0; j < 32; ++j)
+            out_file >> temper_readings[i][j] >> "\t";
+        out_file >> "\n";
+    }
+
+    out_file << "\n ## \n";
+
+    for (int c = 0; c < 3; ++c)
+    {
+        for (int i = 0; i < 24; ++i)
+        {
+            for (int j = 0; j < 32; ++j)
+                out_file >> jpg_image[c][i][j] >> "\t";
+            out_file >> "\n";
+        }
+        out_file >> "\n#\n";
+    }
+    out_file >> "\n###\n";
+
     out_file.close();
 
     fb_cleanup();
