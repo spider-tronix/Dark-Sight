@@ -64,7 +64,9 @@ return 0;
 
 
 void put_pixel_false_colour(int x, int y, double v, float jpg_image[3][24][32])
-{
+{   int xx=x / IMAGE_SCALE;
+    int yy=y / IMAGE_SCALE;
+    
     // Heatmap code borrowed from: http://www.andrewnoske.com/wiki/Code_-_heatmaps_and_color_gradients
     const int NUM_COLORS = 7;
     static float color[NUM_COLORS][3] = {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {1, 0, 1}, {1, 1, 1}};
@@ -104,10 +106,10 @@ void put_pixel_false_colour(int x, int y, double v, float jpg_image[3][24][32])
         }
     }
 
-    jpg_image[0][x][y] = ir;
-    jpg_image[1][x][y] = ig;
-    jpg_image[2][x][y] = ib;
-}
+    jpg_image[0][xx][yy] = ir;
+    jpg_image[1][xx][yy] = ig;
+    jpg_image[2][xx][yy] = ib;
+} 
 
 int main()
 {
@@ -127,7 +129,6 @@ int main()
 
     MLX90640_SetDeviceMode(MLX_I2C_ADDR, 0);
     MLX90640_SetSubPageRepeat(MLX_I2C_ADDR, 0);
-    printf("before switch\n");
     switch (FPS)
     {
     case 1:
@@ -155,18 +156,15 @@ int main()
         printf("Unsupported framerate: %d", FPS);
         return 1;
     }
-    cout<<"End Switch"<<endl;
     MLX90640_SetChessMode(MLX_I2C_ADDR);
 
     paramsMLX90640 mlx90640;
     MLX90640_DumpEE(MLX_I2C_ADDR, eeMLX90640);
     MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
-    printf("start\n");
     fb_init();
-    printf("start\n");
 
     while (!kbhit())
-    {
+    {   
         auto start = std::chrono::system_clock::now();
         auto error = MLX90640_GetFrameData(MLX_I2C_ADDR, frame);
         if (error < 0)
@@ -181,23 +179,20 @@ int main()
 
         MLX90640_BadPixelsCorrection((&mlx90640)->brokenPixels, mlx90640To, 1, &mlx90640);
         MLX90640_BadPixelsCorrection((&mlx90640)->outlierPixels, mlx90640To, 1, &mlx90640);
-
-        for (int y = 0; y < 24; y++)
+        for (int yy = 0; yy < 24; yy++)
         {
-            for (int x = 0; x < 32; x++)
+                
+            for (int xx = 0; xx < 32; xx++)
             {
-                float val = mlx90640To[32 * (23 - y) + x];
-                temper_readings[y][x] = val;
-                put_pixel_false_colour((y * IMAGE_SCALE), (x * IMAGE_SCALE), val, jpg_image);
+                float val = mlx90640To[32 * (23 - yy) + xx];
+                temper_readings[yy][xx] = val;
+                put_pixel_false_colour((yy * IMAGE_SCALE), (xx * IMAGE_SCALE), val, jpg_image);
             }
         }
         auto end = std::chrono::system_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
         std::this_thread::sleep_for(std::chrono::microseconds(frame_time - elapsed));
-        cout<<kbhit();
-
     }
-    cout << "Exited by kbhut";
     string filename;
     ifstream new_file;
     new_file.open("log.txt", ios::in);
@@ -210,28 +205,28 @@ int main()
     new_file.close();
 
     ofstream out_file;
-    out_file.open(filename, ios::out);
+    out_file.open(filename + "temp.txt", ios::out);
 
     for (int i = 0; i < 24; ++i)
     {
         for (int j = 0; j < 32; ++j)
-            out_file<<temper_readings[i][j] << '\n';
+            out_file<<temper_readings[i][j] << '\t';
         out_file<< '\n';
     }
 
-    out_file << '\n';
-
+    out_file.close();
+    out_file.open(filename + "jpg_temp.txt", ios::out);
+    
     for (int c = 0; c < 3; ++c)
     {
         for (int i = 0; i < 24; ++i)
         {
             for (int j = 0; j < 32; ++j)
-                out_file << int(jpg_image[c][i][j]) << '\n';
+                out_file << int(jpg_image[c][i][j]) << '\t';
             out_file << '\n';
         }
-        out_file << '\n';
+        out_file << "\n#\n";
     }
-    out_file <<'\n';
 
     out_file.close();
 
