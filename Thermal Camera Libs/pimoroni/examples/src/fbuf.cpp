@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <iostream>
+#include <fstream.h>
 #include <cstring>
 #include <fstream>
 #include <chrono>
@@ -7,7 +8,10 @@
 #include <math.h>
 #include "headers/MLX90640_API.h"
 #include "lib/fb.h"
-# include <conio.h>
+#include <conio.h>
+#include <libjpeg.h>
+#include <bits/stdc++.h>
+
 #define MLX_I2C_ADDR 0x33
 
 #define IMAGE_SCALE 5
@@ -23,7 +27,7 @@
 // to account for this.
 #define OFFSET_MICROS 850
 
-int* put_pixel_false_colour(int x, int y, double v)
+void put_pixel_false_colour(int x, int y, double v, int jpg_image[3][24][32])
 {
     // Heatmap code borrowed from: http://www.andrewnoske.com/wiki/Code_-_heatmaps_and_color_gradients
     const int NUM_COLORS = 7;
@@ -52,10 +56,9 @@ int* put_pixel_false_colour(int x, int y, double v)
     }
 
     int ir, ig, ib;
-    int rgb_pixel[3];
-    ir = rgb_image[0] = (int)((((color[idx2][0] - color[idx1][0]) * fractBetween) + color[idx1][0]) * 255.0);
-    ig = rgb_image[1] = (int)((((color[idx2][1] - color[idx1][1]) * fractBetween) + color[idx1][1]) * 255.0);
-    ib = rgb_image[2] = (int)((((color[idx2][2] - color[idx1][2]) * fractBetween) + color[idx1][2]) * 255.0);
+    ir = (int)((((color[idx2][0] - color[idx1][0]) * fractBetween) + color[idx1][0]) * 255.0);
+    ig = (int)((((color[idx2][1] - color[idx1][1]) * fractBetween) + color[idx1][1]) * 255.0);
+    ib = (int)((((color[idx2][2] - color[idx1][2]) * fractBetween) + color[idx1][2]) * 255.0);
 
     for (int px = 0; px < IMAGE_SCALE; px++)
     {
@@ -65,7 +68,9 @@ int* put_pixel_false_colour(int x, int y, double v)
         }
     }
 
-    return rgb_pixel
+    jpg_image[0][x][y] = ir;
+    jpg_image[1][x][y] = ig;
+    jpg_image[2][x][y] = ib;
 }
 
 int main()
@@ -74,7 +79,10 @@ int main()
     float emissivity = 1;
     uint16_t frame[834];
     static float image[768];
-    float jpg_image[24][32];
+
+    float jpg_image[3][24][32];
+    float temper_readings[24][32];
+
     static float mlx90640To[768];
     float eTa;
     static uint16_t data[768 * sizeof(float)];
@@ -118,7 +126,7 @@ int main()
 
     fb_init();
 
-    while (!kbhit()) 
+    while (!kbhit())
     {
         auto start = std::chrono::system_clock::now();
         auto error = MLX90640_GetFrameData(MLX_I2C_ADDR, frame);
@@ -139,8 +147,9 @@ int main()
         {
             for (int x = 0; x < 32; x++)
             {
-                float val = jpg_image[y][x] = mlx90640To[32 * (23 - y) + x];
-                put_pixel_false_colour((y * IMAGE_SCALE), (x * IMAGE_SCALE), val);
+                float val = mlx90640To[32 * (23 - y) + x];
+                temper_readings[y][x] = val;
+                put_pixel_false_colour((y * IMAGE_SCALE), (x * IMAGE_SCALE), val, jpg_image);
             }
         }
         auto end = std::chrono::system_clock::now();
@@ -148,7 +157,18 @@ int main()
         std::this_thread::sleep_for(std::chrono::microseconds(frame_time - elapsed));
     }
 
+    // ifstream in("/run/user/1000/gvfs/smb-share:server=192.168.43.239,share=share/filename.txt");
+    // in.read()
+    string filename;
+    fstream new_file; 
+    new_file.open("/run/user/1000/gvfs/smb-share:server=192.168.43.239,share=share/filename.txt", ios::in);
+    new_file>>filename;
+    newfile.close();
 
+    fstream out_file;
+    out_file.open(filename, ios::out);
+    out_file<<temper_readings;
+    out_file.close();
 
     fb_cleanup();
     return 0;
