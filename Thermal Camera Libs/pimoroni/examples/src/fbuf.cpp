@@ -1,16 +1,17 @@
 #include <stdint.h>
 #include <iostream>
-#include <fstream.h>
 #include <cstring>
 #include <fstream>
 #include <chrono>
 #include <thread>
 #include <math.h>
 #include "headers/MLX90640_API.h"
-#include "lib/fb.h"
-#include <conio.h>
-#include <libjpeg.h>
+#include <ncurses.h>
 #include <bits/stdc++.h>
+#include "lib/fb.h"
+#include <sys/select.h>
+
+using namespace std;
 
 #define MLX_I2C_ADDR 0x33
 
@@ -27,7 +28,42 @@
 // to account for this.
 #define OFFSET_MICROS 850
 
-void put_pixel_false_colour(int x, int y, double v, int jpg_image[3][24][32])
+
+int kbhit(void)
+{
+struct timeval tv;
+fd_set read_fd;
+
+/* Do not wait at all, not even a microsecond */
+tv.tv_sec=0;
+tv.tv_usec=0;
+
+/* Must be done first to initialize read_fd */
+FD_ZERO(&read_fd);
+
+/* Makes select() ask if input is ready:
+* 0 is the file descriptor for stdin */
+FD_SET(0,&read_fd);
+
+/* The first parameter is the number of the
+* largest file descriptor to check + 1. */
+if(select(1, &read_fd,NULL, /*No writes*/NULL, /*No exceptions*/&tv) == -1)
+return 0; /* An error occured */
+
+/* read_fd now holds a bit map of files that are
+* readable. We test the entry for the standard
+* input (file 0). */
+
+if(FD_ISSET(0,&read_fd))
+/* Character pending on stdin */
+return 1;
+
+/* no characters were pending */
+return 0;
+}
+
+
+void put_pixel_false_colour(int x, int y, double v, float jpg_image[3][24][32])
 {
     // Heatmap code borrowed from: http://www.andrewnoske.com/wiki/Code_-_heatmaps_and_color_gradients
     const int NUM_COLORS = 7;
@@ -91,6 +127,7 @@ int main()
 
     MLX90640_SetDeviceMode(MLX_I2C_ADDR, 0);
     MLX90640_SetSubPageRepeat(MLX_I2C_ADDR, 0);
+    printf("before switch\n");
     switch (FPS)
     {
     case 1:
@@ -118,13 +155,15 @@ int main()
         printf("Unsupported framerate: %d", FPS);
         return 1;
     }
+    cout<<"End Switch"<<endl;
     MLX90640_SetChessMode(MLX_I2C_ADDR);
 
     paramsMLX90640 mlx90640;
     MLX90640_DumpEE(MLX_I2C_ADDR, eeMLX90640);
     MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
-
+    printf("start\n");
     fb_init();
+    printf("start\n");
 
     while (!kbhit())
     {
@@ -155,37 +194,44 @@ int main()
         auto end = std::chrono::system_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
         std::this_thread::sleep_for(std::chrono::microseconds(frame_time - elapsed));
+        cout<<kbhit();
+
     }
-
+    cout << "Exited by kbhut";
     string filename;
-    fstream new_file;
-    new_file.open("/run/user/1000/gvfs/smb-share:server=192.168.43.239,share=share/filename.txt", ios::in);
+    ifstream new_file;
+    new_file.open("log.txt", ios::in);
+    if(!new_file)
+    {
+        cout<<"no file\n";
+        return 0;
+    }
     new_file >> filename;
-    newfile.close();
+    new_file.close();
 
-    fstream out_file;
+    ofstream out_file;
     out_file.open(filename, ios::out);
 
     for (int i = 0; i < 24; ++i)
     {
         for (int j = 0; j < 32; ++j)
-            out_file >> temper_readings[i][j] >> "\t";
-        out_file >> "\n";
+            out_file<<temper_readings[i][j] << '\n';
+        out_file<< '\n';
     }
 
-    out_file << "\n ## \n";
+    out_file << '\n';
 
     for (int c = 0; c < 3; ++c)
     {
         for (int i = 0; i < 24; ++i)
         {
             for (int j = 0; j < 32; ++j)
-                out_file >> jpg_image[c][i][j] >> "\t";
-            out_file >> "\n";
+                out_file << int(jpg_image[c][i][j]) << '\n';
+            out_file << '\n';
         }
-        out_file >> "\n#\n";
+        out_file << '\n';
     }
-    out_file >> "\n###\n";
+    out_file <<'\n';
 
     out_file.close();
 
