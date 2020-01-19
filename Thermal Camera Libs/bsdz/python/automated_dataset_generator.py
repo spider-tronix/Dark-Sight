@@ -5,11 +5,11 @@ import time
 from datetime import datetime
 from time import sleep
 
-# import cv2
+import cv2
 import matplotlib as mpl
 import numpy as np
 import pygame
-from MLX90640 import API, ffi, hertz_to_refresh_rate, temperature_data_to_ndarray
+# from MLX90640 import API, ffi, hertz_to_refresh_rate, temperature_data_to_ndarray
 from PIL import Image
 from matplotlib import cm
 from sh import gphoto2 as gp
@@ -59,19 +59,19 @@ def createSaveFolder(save_location):
 
 def captureImages():
     gp(triggerCommand)
-    sleep(5)
+    sleep(3)
     gp(downloadCommand)
     gp(clearCommand)
 
 
 def renameFiles(ID, shot_time):
-    for filename in os.listdir("examples"):
+    for filename in os.listdir("."):
         if len(filename) < 13:
             if filename.endswith(".JPG"):
-                os.rename(filename, (shot_time + ID + ".JPG"))
+                os.rename(filename, (shot_time + ".JPG"))
                 print("Renamed the JPG")
             elif filename.endswith(".CR2"):
-                os.rename(filename, (shot_time + ID + ".CR2"))
+                os.rename(filename, (shot_time + ".CR2"))
                 print("Renamed the CR2")
 
 
@@ -88,7 +88,7 @@ class ThermalFeed:
         pygame.mouse.set_visible(True)
         font = pygame.font.SysFont('freemono', 10)
 
-        # mlx90640 settings
+        """# mlx90640 settings
         self.MLX_I2C_ADDR = 0x33
         self.hertz_default = 8
         API.SetRefreshRate(self.MLX_I2C_ADDR, hertz_to_refresh_rate[self.hertz_default])
@@ -98,12 +98,12 @@ class ThermalFeed:
         self.eeprom_data = ffi.new("uint16_t[832]")
         self.params = ffi.new("paramsMLX90640*")
         API.DumpEE(self.MLX_I2C_ADDR, self.eeprom_data)
-        API.ExtractParameters(self.eeprom_data, self.params)
+        API.ExtractParameters(self.eeprom_data, self.params)"""
 
-        self.TA_SHIFT = 8  # the default shift for a MLX90640 device in open air
+        """self.TA_SHIFT = 8  # the default shift for a MLX90640 device in open air
         self.emissivity = 0.95
         self.frame_buffer = ffi.new("uint16_t[834]")
-        self.image_buffer = ffi.new("float[768]")
+        self.image_buffer = ffi.new("float[768]")"""
         self.last = time.monotonic()
         self.now = time.monotonic()
         self.diff = self.now - self.last
@@ -113,7 +113,7 @@ class ThermalFeed:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        API.GetFrameData(self.MLX_I2C_ADDR, self.frame_buffer)
+        """API.GetFrameData(self.MLX_I2C_ADDR, self.frame_buffer)
         self.now = time.monotonic()
         self.diff = self.now - self.last
         self.last = self.now
@@ -122,20 +122,20 @@ class ThermalFeed:
         ta_np = temperature_data_to_ndarray(self.image_buffer)
         ta_img = td_to_image(ta_np, self.cmap)
         pyg_img = pygame.image.fromstring(ta_img.tobytes(), ta_img.size, ta_img.mode)
-        self.display.blit(pyg_img, (0, 0))
+        self.display.blit(pyg_img, (0, 0))"""
         pygame.display.update()
 
 
 def main():
     thermalcam = ThermalFeed()
-    # cv2.namedWindow("Shutter Button (_)")
+    cv2.namedWindow("Shutter Button (_)")
     while True:
         thermalcam.thermal_update()
 
-        # k = cv2.waitKey(10)
-        k = pygame.event.get()
-        # if k == 32:
-        if k == 2:
+        k = cv2.waitKey(10)
+        # k = pygame.event.get()
+        # if k == 2:
+        if k == 32:
             print("Taking Pics!")
             shot_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             gp(raw_and_large)
