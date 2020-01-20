@@ -6,6 +6,7 @@ from time import sleep
 
 import pygame
 from pygame.locals import *
+# noinspection PyUnresolvedReferences
 from sh import gphoto2 as gp
 
 from config import *
@@ -25,7 +26,7 @@ def createSaveFolder(save_location):
     try:
         os.makedirs(save_location)
         with open("/home/syzygianinfern0/sambashare/timestamp.txt", 'w') as handler:
-            handler.write('/'.join(save_location.split('/')[4:6]) + '/')
+            handler.write('/'.join(save_location.split('/')[4:6]))
             print("Timstamp is ready")
     except:
         print("Failed to create new directory.")
@@ -60,7 +61,7 @@ def main():
         for event in pygame.event.get():
             if event.type == KEYDOWN:
                 print("Taking Pics!")
-                shot_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                shot_time = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
                 gp(raw_and_large)
                 gp(def_exp)
                 captureImages()
@@ -81,7 +82,7 @@ def main():
 
 if __name__ == '__main__':
     picID = "Cannon800DShots"
-    shot_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    shot_time = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
     folder_name = shot_time + picID
     save_location = "/home/syzygianinfern0/sambashare/Dataset/" + folder_name
