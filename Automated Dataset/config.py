@@ -9,3 +9,5 @@ small = ["--set-config", "imageformatcf=6"]
 short_exp = ["--set-config", "shutterspeed=52"]  # 1 / 4000
 def_exp = ["--set-config", "shutterspeed=32"]  # 1 / 40
 long_exp = ["--set-config", "shutterspeed=2"]  # 2
+
+iso_init = ["--set-config", "iso=5"]

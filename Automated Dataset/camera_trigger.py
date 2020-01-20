@@ -10,6 +10,7 @@ from pygame.locals import *
 from sh import gphoto2 as gp
 
 from config import *
+from convert2jpg import txt2jpg
 
 
 def killGphoto2Process():
@@ -77,6 +78,8 @@ def main():
                 gp(long_exp)
                 captureImages()
                 renameFiles(picID, shot_time + "small_long")
+
+                txt2jpg()
                 exit()
 
 
@@ -94,4 +97,5 @@ if __name__ == '__main__':
     except:
         print("No Camera to Kill\n")
     gp(clearCommand)
+    gp(iso_init)
     main()
