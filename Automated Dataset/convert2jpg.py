@@ -36,7 +36,17 @@ def txt2jpg():
     img.append(igg)
     img.append(ibb)
 
-    img = np.array([np.array(img[0]).T, np.array(img[1]).T, np.array(img[2]).T]).T
+    img = np.array(img)
+
+    # img = np.flip(img, 1)
+    # img = np.flip(img, 0)
+    # img = np.fliplr(img)
+
+    img = img.transpose((1, 2, 0))
+    img = np.flipud(img)
+    img = np.fliplr(img)
+
+    # img = np.array([np.array(img[0]).T, np.array(img[1]).T, np.array(img[2]).T]).T
     print(img.shape)
     img = img / 255
     direc = '/home/syzygianinfern0/sambashare/' + filename
@@ -54,5 +64,17 @@ def txt2jpg():
     for col in tem_row:
         temp.append(list(map(float, col.strip().split('\t'))))
     temp = np.array(temp)
+
+    temp = np.flipud(temp)
+    temp = np.fliplr(temp)
+
     temp = temp / 255
     plt.imsave(direc + '/temp.jpg', temp)
+
+
+def main():
+    txt2jpg()
+
+
+if __name__ == '__main__':
+    main()
