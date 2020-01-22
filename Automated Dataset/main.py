@@ -10,7 +10,7 @@ from pygame.locals import *
 from sh import gphoto2 as gp
 
 from config import *
-from convert2jpg import txt2jpg
+from thermal_trigger import ThermalCamera
 
 
 def killGphoto2Process():
@@ -53,6 +53,7 @@ def renameFiles(ID, shot_time):
 
 
 def main():
+    thermal_camera = ThermalCamera()
     pygame.init()
     pygame.font.init()
     display = pygame.display.set_mode((320, 240))
@@ -63,6 +64,8 @@ def main():
             if event.type == KEYDOWN:
                 print("Taking Pics!")
                 shot_time = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+
+                thermal_camera.trigger_camera()
                 gp(raw_and_large)
                 gp(def_exp)
                 captureImages()
@@ -79,7 +82,6 @@ def main():
                 captureImages()
                 renameFiles(picID, shot_time + "small_long")
 
-                txt2jpg()
                 exit()
 
 
