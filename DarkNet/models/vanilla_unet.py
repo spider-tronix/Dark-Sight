@@ -80,7 +80,7 @@ class VanillaUNet(nn.Module):
                                       for in_channels, out_channels, pool in zip(channels, channels[1:], self.pools)])
 
         self.decoder = nn.ModuleList([UpConv(in_channels, out_channels)
-                                      for in_channels, out_channels in zip(channels[::-1], channels[::-1][1:])])
+                                      for in_channels, out_channels in zip(channels[::-1], channels[::-1][1:-1])])
 
         self.lastconv = nn.Conv2d(in_channels=channels_1, out_channels=12,
                                   kernel_size=1, stride=1, padding=0)
@@ -101,3 +101,8 @@ class VanillaUNet(nn.Module):
         x = self.lastconv(x)  # no activation
         x = self.upscale(x)
         return x
+
+
+if __name__ == '__main__':
+    net = VanillaUNet().cuda()
+    input = torch.randint(2 ** 12, (1, 4, 6000, 4000)).float().cuda()
