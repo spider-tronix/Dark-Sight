@@ -67,3 +67,37 @@ class UpConv(nn.Module):
         out = self.act(self.conv2(out))
 
         return out
+
+
+class VanillaUNet(nn.Module):
+    def __init__(self, channels_1=32):
+        super(VanillaUNet, self).__init__()
+        conv_sizes = [1, 2, 4, 8, 16]
+        channels = [4] + [channels_1 * i for i in conv_sizes]  # [4, 32, 64, 128, 256, 512]
+
+        self.pools = [True] * 4 + [False]
+        self.encoder = nn.ModuleList([DownConv(in_channels, out_channels, pool)
+                                      for in_channels, out_channels, pool in zip(channels, channels[1:], self.pools)])
+
+        self.decoder = nn.ModuleList([UpConv(in_channels, out_channels)
+                                      for in_channels, out_channels in zip(channels[::-1], channels[::-1][1:])])
+
+        self.lastconv = nn.Conv2d(in_channels=channels_1, out_channels=12,
+                                  kernel_size=1, stride=1, padding=0)
+
+        self.upscale = torch.nn.PixelShuffle(2)  # UP Sampling (Inspired fom SuperResolution)
+
+        self.trace = []
+
+    def forward(self, x):  # input of shape (N, C, H, W)
+        for down_layer in self.encoder:
+            x, prior = down_layer(x)
+            self.trace.append(prior)
+        self.trace.pop(-1)
+
+        for up_layer, feature_map in zip(self.decoder, self.trace[::-1]):
+            x = up_layer(up_layer, feature_map)
+
+        x = self.lastconv(x)  # no activation
+        x = self.upscale(x)
+        return x
