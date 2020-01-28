@@ -47,9 +47,9 @@ def renameFiles(ID, shot_time):
             if filename.endswith(".JPG"):
                 os.rename(filename, (shot_time + ID + ".JPG"))
                 print("Renamed the JPG")
-            elif filename.endswith(".CR2"):
-                os.rename(filename, (shot_time + ID + ".CR2"))
-                print("Renamed the CR2")
+            elif filename.endswith(".CR3"):
+                os.rename(filename, (shot_time + ID + ".CR3"))
+                print("Renamed the CR3")
 
 
 def main():
@@ -86,7 +86,7 @@ def main():
 
 
 if __name__ == '__main__':
-    picID = "Cannon800DShots"
+    picID = "Cannon200DShots"
     shot_time = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
     folder_name = shot_time + picID
