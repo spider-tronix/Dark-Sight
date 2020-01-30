@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from utils.module import model_summary
+
 
 class DownConv(nn.Module):
     def __init__(self, in_channels, out_channels, pooling=True):
@@ -96,7 +98,7 @@ class VanillaUNet(nn.Module):
         self.trace.pop(-1)
 
         for up_layer, feature_map in zip(self.decoder, self.trace[::-1]):
-            x = up_layer(up_layer, feature_map)
+            x = up_layer(x, feature_map)
 
         x = self.lastconv(x)  # no activation
         x = self.upscale(x)
@@ -105,4 +107,7 @@ class VanillaUNet(nn.Module):
 
 if __name__ == '__main__':
     net = VanillaUNet().cuda()
-    input = torch.randint(2 ** 12, (1, 4, 6000, 4000)).float().cuda()
+    model_summary(net)
+    input = torch.randint(2 ** 12, (1, 4, 512, 512)).float().cuda()
+    output = net(input)
+    print(output)
