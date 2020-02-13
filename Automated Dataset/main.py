@@ -26,7 +26,7 @@ def killGphoto2Process():
 def createSaveFolder(save_location):
     try:
         os.makedirs(save_location)
-        with open("/home/syzygianinfern0/sambashare/timestamp.txt", 'w') as handler:
+        with open("/home/sudhar/sambashare/timestamp.txt", 'w') as handler:
             handler.write('/'.join(save_location.split('/')[4:6]))
             print("Timstamp is ready")
     except:
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     shot_time = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
     folder_name = shot_time + picID
-    save_location = "/home/syzygianinfern0/sambashare/Dataset/" + folder_name
+    save_location = "/home/sudhar/sambashare/Dataset/" + folder_name
 
     createSaveFolder(save_location)
 
