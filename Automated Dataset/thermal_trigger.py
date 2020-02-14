@@ -24,13 +24,13 @@ class ThermalCamera:
 
     @staticmethod
     def txt2jpg():
-        file = open('/home/syzygianinfern0/sambashare/timestamp.txt', 'r')
+        file = open('/home/sudhar/sambashare/timestamp.txt', 'r')
         filename = file.read().strip()
         file.close()
-        file = open('/home/syzygianinfern0/sambashare/' + filename + '/jpg_temp.txt', 'r')
+        file = open('/home/sudhar/sambashare/' + filename + '/jpg_temp.txt', 'r')
 
         while (not file):
-            file = open('/home/syzygianinfern0/sambashare/' + filename + '/jpg_temp.txt', 'r')
+            file = open('/home/sudhar/sambashare/' + filename + '/jpg_temp.txt', 'r')
 
         string = ""
         for each in file:
@@ -62,12 +62,12 @@ class ThermalCamera:
 
         print(img.shape)
         img = img / 255
-        direc = '/home/syzygianinfern0/sambashare/' + filename
+        direc = '/home/sudhar/sambashare/' + filename
 
         plt.imsave(direc + '/jpg_temp.jpg', img)
         file.close()
 
-        file = open('/home/syzygianinfern0/sambashare/' + filename + '/temp.txt', 'r')
+        file = open('/home/sudhar/sambashare/' + filename + '/temp.txt', 'r')
 
         string = ""
         for each in file:
