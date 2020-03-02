@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
+from results.configs import SIZE
 from utils.module import model_summary
 
 torch.manual_seed(0)
@@ -83,6 +83,8 @@ class VanillaUNet(nn.Module):
         channels = [4] + [channels_1 * i for i in conv_sizes]  # [4, 32, 64, 128, 256, 512]
 
         self.pools = [True] * 4 + [False]
+        self.upsample_temps = nn.UpsamplingBilinear2d(size=SIZE)
+
         self.encoder = nn.ModuleList([DownConv(in_channels, out_channels, pool)
                                       for in_channels, out_channels, pool in zip(channels, channels[1:], self.pools)])
 
@@ -93,10 +95,14 @@ class VanillaUNet(nn.Module):
                                   kernel_size=1, stride=1, padding=0)
 
         self.upscale = torch.nn.PixelShuffle(2)  # UP Sampling (Inspired fom SuperResolution)
+        # TODO: Use upscale in Testing Phase
 
         self.trace = []
 
-    def forward(self, x):  # input of shape (N, C, H, W)
+    def forward(self, x_1, x_2):  # input of shape (N, C, H, W)
+        x_2 = self.upsample_temps(x_2)
+        x = torch.cat([x_1, x_2], dim=1)
+
         for down_layer in self.encoder:
             x, prior = down_layer(x)
             self.trace.append(prior)
@@ -117,9 +123,6 @@ if __name__ == '__main__':
     temps = torch.randint(40, (1, 1, 32, 24)).float().cuda()
 
     # TODO: Updsample vs interpolate (also bilinear from usage in papers)
-    temps = F.upsample(temps, (512, 512), mode='bilinear')
 
-    inp = torch.cat([low, temps], dim=1)
-
-    output = net(inp)
+    output = net(low, temps)
     print(output)
