@@ -1,7 +1,12 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from utils.module import model_summary
+
+torch.manual_seed(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 
 class DownConv(nn.Module):
@@ -84,7 +89,7 @@ class VanillaUNet(nn.Module):
         self.decoder = nn.ModuleList([UpConv(in_channels, out_channels)
                                       for in_channels, out_channels in zip(channels[::-1], channels[::-1][1:-1])])
 
-        self.lastconv = nn.Conv2d(in_channels=channels_1, out_channels=12,
+        self.lastconv = nn.Conv2d(in_channels=channels_1, out_channels=3,
                                   kernel_size=1, stride=1, padding=0)
 
         self.upscale = torch.nn.PixelShuffle(2)  # UP Sampling (Inspired fom SuperResolution)
@@ -101,13 +106,20 @@ class VanillaUNet(nn.Module):
             x = up_layer(x, feature_map)
 
         x = self.lastconv(x)  # no activation
-        x = self.upscale(x)
+        # x = self.upscale(x)
         return x
 
 
 if __name__ == '__main__':
     net = VanillaUNet().cuda()
     model_summary(net)
-    input = torch.randint(2 ** 12, (1, 4, 512, 512)).float().cuda()
-    output = net(input)
+    low = torch.randint(2 ** 8, (1, 3, 512, 512)).float().cuda()
+    temps = torch.randint(40, (1, 1, 32, 24)).float().cuda()
+
+    # TODO: Updsample vs interpolate (also bilinear from usage in papers)
+    temps = F.upsample(temps, (512, 512), mode='bilinear')
+
+    inp = torch.cat([low, temps], dim=1)
+
+    output = net(inp)
     print(output)
