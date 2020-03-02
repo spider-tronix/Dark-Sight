@@ -1,12 +1,7 @@
-import torch
 import torch.nn as nn
 
-from results.configs import SIZE
+from results.configs import *
 from utils.module import model_summary
-
-torch.manual_seed(0)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
 
 
 class DownConv(nn.Module):
@@ -122,7 +117,7 @@ if __name__ == '__main__':
     low = torch.randint(2 ** 8, (1, 3, 512, 512)).float().cuda()
     temps = torch.randint(40, (1, 1, 32, 24)).float().cuda()
 
-    # TODO: Updsample vs interpolate (also bilinear from usage in papers)
+    # TODO: Upsample vs interpolate (also bilinear from usage in papers)
 
     output = net(low, temps)
     print(output)
