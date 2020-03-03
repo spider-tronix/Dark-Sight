@@ -89,7 +89,7 @@ class VanillaUNet(nn.Module):
         self.lastconv = nn.Conv2d(in_channels=channels_1, out_channels=3,
                                   kernel_size=1, stride=1, padding=0)
 
-        self.upscale = torch.nn.PixelShuffle(2)  # UP Sampling (Inspired fom SuperResolution)
+        # self.upscale = torch.nn.PixelShuffle(2)  # UP Sampling (Inspired fom SuperResolution)
         # TODO: Use upscale in Testing Phase
 
         self.trace = []
@@ -114,7 +114,7 @@ class VanillaUNet(nn.Module):
 if __name__ == '__main__':
     net = VanillaUNet().cuda()
     model_summary(net)
-    low = torch.randint(2 ** 8, (1, 3, 512, 512)).float().cuda()
+    low = torch.randint(2 ** 8, (1, 3, SIZE[0], SIZE[1])).float().cuda()
     temps = torch.randint(40, (1, 1, 32, 24)).float().cuda()
 
     # TODO: Upsample vs interpolate (also bilinear from usage in papers)

@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+# SIZE = (512, 512)
 SIZE = (512, 512)
 DATALOADER_TXT = "/home/syzygianinfern0/sambashare/myFile_jpg.txt"
 ROOT_DIR = "/home/syzygianinfern0/sambashare"
