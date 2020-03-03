@@ -5,6 +5,7 @@ import pandas as pd
 from skimage import io
 from torch.utils.data import Dataset
 
+from data.transforms import simple_transform
 from results.configs import *
 
 
@@ -55,18 +56,20 @@ class Precious(Dataset):
         temps_img = temps_img.iloc[:, :-1]
         temps_img = temps_img.values
 
+        if self.transform:
+            long_img = self.transform(long_img)
+            short_img = self.transform(short_img)
+            # temps_img = self.transform(temps_img)
+
         data_sample = {'long_img': long_img,
                        'short_img': short_img,
                        'temps_img': temps_img}
-
-        if self.transform:
-            data_sample = self.transform(data_sample)
 
         return data_sample
 
 
 if __name__ == '__main__':
-    precious = Precious()
+    precious = Precious(transform=simple_transform)
     fig = plt.figure()
     for i in range(len(precious)):
         sample = precious[i]

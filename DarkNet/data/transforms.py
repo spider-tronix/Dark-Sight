@@ -11,6 +11,7 @@ data_transform = transforms.Compose([  # TODO: Get the best of these
 ])
 
 simple_transform = transforms.Compose([
-    transforms.Resize((SIZE, SIZE)),
+    transforms.ToPILImage(),
+    transforms.Resize(SIZE),
     transforms.ToTensor(),
 ])
