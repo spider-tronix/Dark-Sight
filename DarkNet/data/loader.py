@@ -23,6 +23,12 @@ class Precious(Dataset):
 
     @staticmethod
     def read_loader_txt(path=DATALOADER_TXT):
+        """
+        Reads from the dataset_gen text file and creates the dataframe
+
+        :param path: Path for the dataset contents text file
+        :return: Dataframe with cols of 'long', 'short', 'temps'
+        """
         tsf = pd.read_csv(path, sep='\t', names=['long', 'short', 'temps'])
         return tsf
 
@@ -30,6 +36,12 @@ class Precious(Dataset):
         return len(self.tsf)
 
     def __getitem__(self, idx):
+        """
+        Returns an item from the dataset
+
+        :param idx: Index
+        :return: A dictionary of the images of that index
+        """
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
@@ -55,20 +67,9 @@ class Precious(Dataset):
 
 if __name__ == '__main__':
     precious = Precious()
-
     fig = plt.figure()
-
     for i in range(len(precious)):
         sample = precious[i]
-
         print(i, sample['long_img'].shape, sample['short_img'].shape, sample['temps_img'].shape)
-
-        ax = plt.subplot(1, 4, i + 1)
-        plt.tight_layout()
-        ax.set_title('Sample #{}'.format(i))
-        ax.axis('off')
-        # show_landmarks(**sample)
-
         if i == 3:
-            plt.show()
             break
