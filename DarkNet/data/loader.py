@@ -1,56 +1,74 @@
 import os
 
-import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
-import torch
 from skimage import io
 from torch.utils.data import Dataset
 
-
-def read_loader_txt(path="/home/syzygianinfern0/sambashare/myFile_jpg.txt"):
-    with open(path) as handler:
-        tsf = list(zip(*(line.strip().split('\t') for line in handler)))
-    return tsf
+from results.configs import *
 
 
 class Precious(Dataset):
     """The DarkSights blood and sweat"""
 
-    def __init__(self, csv_file, root_dir, transform=None):
+    def __init__(self, transform=None):
         """
-        Args:
-            csv_file (string): Path to the csv file with annotations.
-            root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
+        Init all class variables
+
+        :param transform: To be decided
         """
-        self.landmarks_frame = pd.read_csv(csv_file)
-        self.root_dir = root_dir
+        self.tsf = self.read_loader_txt(DATALOADER_TXT)
         self.transform = transform
+        self.root_dir = ROOT_DIR
+
+    @staticmethod
+    def read_loader_txt(path=DATALOADER_TXT):
+        tsf = pd.read_csv(path, sep='\t', names=['long', 'short', 'temps'])
+        return tsf
 
     def __len__(self):
-        return len(self.landmarks_frame)
+        return len(self.tsf)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_name = os.path.join(self.root_dir,
-                                self.landmarks_frame.iloc[idx, 0])
-        image = io.imread(img_name)
-        landmarks = self.landmarks_frame.iloc[idx, 1:]
-        landmarks = np.array([landmarks])
-        landmarks = landmarks.astype('float').reshape(-1, 2)
-        sample = {'image': image, 'landmarks': landmarks}
+        long_img = os.path.join(self.root_dir, self.tsf.iloc[idx, 0])
+        short_img = os.path.join(self.root_dir, self.tsf.iloc[idx, 1])
+        temps_img = os.path.join(self.root_dir, self.tsf.iloc[idx, 2])
+
+        long_img = io.imread(long_img)
+        short_img = io.imread(short_img)
+        temps_img = pd.read_csv(temps_img, sep='\t', header=None)
+        temps_img = temps_img.iloc[:, :-1]
+        temps_img = temps_img.values
+
+        data_sample = {'long_img': long_img,
+                       'short_img': short_img,
+                       'temps_img': temps_img}
 
         if self.transform:
-            sample = self.transform(sample)
+            data_sample = self.transform(data_sample)
 
-        return sample
+        return data_sample
 
 
 if __name__ == '__main__':
-    tsf = read_loader_txt()
+    precious = Precious()
 
-    short, long, temps = tsf[0], tsf[1], tsf[2]
-    print(short)
+    fig = plt.figure()
+
+    for i in range(len(precious)):
+        sample = precious[i]
+
+        print(i, sample['long_img'].shape, sample['short_img'].shape, sample['temps_img'].shape)
+
+        ax = plt.subplot(1, 4, i + 1)
+        plt.tight_layout()
+        ax.set_title('Sample #{}'.format(i))
+        ax.axis('off')
+        # show_landmarks(**sample)
+
+        if i == 3:
+            plt.show()
+            break
