@@ -7,6 +7,9 @@
 #include<iostream>
 #include<fstream>
 #include<errno.h>
+
+#define PORT 8889
+const char* IP_ADDRESS = "0.0.0.0";
 using namespace std;
 
 //This function is to be used once we have confirmed that an image is to be sent
@@ -40,7 +43,7 @@ stat = write(socket, &buffer, sizeof(int));
 printf("Reply sent\n");
 printf(" \n");
 
-image = fopen("capture2.jpeg", "w");
+image = fopen("Client/received.jpeg", "w");
 
 if( image == NULL) {
 printf("Error has occurred. Image file could not be opened\n");
@@ -119,9 +122,9 @@ while(recv_size < size) {
   }
 
   memset(&server,0,sizeof(server));
-  server.sin_addr.s_addr = inet_addr("0.0.0.0");
+  server.sin_addr.s_addr = inet_addr(IP_ADDRESS);
   server.sin_family = AF_INET;
-  server.sin_port = htons( 8889 );
+  server.sin_port = htons( PORT );
 
   //Connect to remote server
   if (connect(socket_desc , (struct sockaddr *)&server , sizeof(server)) < 0) {
