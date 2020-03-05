@@ -59,11 +59,11 @@ class Precious(Dataset):
         if self.transform:
             long_img = self.transform(long_img)
             short_img = self.transform(short_img)
-            # temps_img = self.transform(temps_img)
+            temps_img = torch.Tensor((temps_img - 29.99) / 1.049)
 
-        data_sample = {'long_img': long_img,
-                       'short_img': short_img,
-                       'temps_img': temps_img}
+        data_sample = {'long_img': long_img.cuda(),
+                       'short_img': short_img.cuda(),
+                       'temps_img': temps_img.cuda()}
 
         return data_sample
 

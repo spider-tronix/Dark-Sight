@@ -15,3 +15,9 @@ simple_transform = transforms.Compose([
     transforms.Resize(SIZE),
     transforms.ToTensor(),
 ])
+
+temps_normalize = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Normalize(29.99, 1.049),
+    transforms.ToTensor(),
+])
