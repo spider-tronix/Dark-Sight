@@ -95,6 +95,7 @@ class VanillaUNet(nn.Module):
         self.trace = []
 
     def forward(self, x_1, x_2):  # input of shape (N, C, H, W)
+        self.trace = []
         x_2 = self.upsample_temps(x_2)
         x = torch.cat([x_1, x_2], dim=1)
 
@@ -114,10 +115,10 @@ class VanillaUNet(nn.Module):
 if __name__ == '__main__':
     net = VanillaUNet().cuda()
     model_summary(net)
-    low = torch.randint(2 ** 8, (1, 3, SIZE[0], SIZE[1])).float().cuda()
-    temps = torch.randint(40, (1, 1, 32, 24)).float().cuda()
+    # low = torch.randint(2 ** 8, (1, 3, SIZE[0], SIZE[1])).float().cuda()
+    # temps = torch.randint(40, (1, 1, 32, 24)).float().cuda()
 
     # TODO: Upsample vs interpolate (also bilinear from usage in papers)
 
-    output = net(low, temps)
-    print(output)
+    # output = net(low, temps)
+    # print(outpu0t)
