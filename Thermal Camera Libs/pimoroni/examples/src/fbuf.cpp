@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <iostream>
+#include <stdio.h>
 #include <cstring>
 #include <fstream>
 #include <chrono>
@@ -10,6 +11,7 @@
 #include <bits/stdc++.h>
 #include "lib/fb.h"
 #include <sys/select.h>
+#include "lib/socket_comms.h"
 
 using namespace std;
 
@@ -28,45 +30,44 @@ using namespace std;
 // to account for this.
 #define OFFSET_MICROS 850
 
-
 int kbhit(void)
 {
-struct timeval tv;
-fd_set read_fd;
+    struct timeval tv;
+    fd_set read_fd;
 
-/* Do not wait at all, not even a microsecond */
-tv.tv_sec=0;
-tv.tv_usec=0;
+    /* Do not wait at all, not even a microsecond */
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
 
-/* Must be done first to initialize read_fd */
-FD_ZERO(&read_fd);
+    /* Must be done first to initialize read_fd */
+    FD_ZERO(&read_fd);
 
-/* Makes select() ask if input is ready:
+    /* Makes select() ask if input is ready:
 * 0 is the file descriptor for stdin */
-FD_SET(0,&read_fd);
+    FD_SET(0, &read_fd);
 
-/* The first parameter is the number of the
+    /* The first parameter is the number of the
 * largest file descriptor to check + 1. */
-if(select(1, &read_fd,NULL, /*No writes*/NULL, /*No exceptions*/&tv) == -1)
-return 0; /* An error occured */
+    if (select(1, &read_fd, NULL, /*No writes*/ NULL, /*No exceptions*/ &tv) == -1)
+        return 0; /* An error occured */
 
-/* read_fd now holds a bit map of files that are
+    /* read_fd now holds a bit map of files that are
 * readable. We test the entry for the standard
 * input (file 0). */
 
-if(FD_ISSET(0,&read_fd))
-/* Character pending on stdin */
-return 1;
+    if (FD_ISSET(0, &read_fd))
+        /* Character pending on stdin */
+        return 1;
 
-/* no characters were pending */
-return 0;
+    /* no characters were pending */
+    return 0;
 }
 
-
 void put_pixel_false_colour(int x, int y, double v, float jpg_image[3][24][32])
-{   int xx=x / IMAGE_SCALE;
-    int yy=y / IMAGE_SCALE;
-    
+{
+    int xx = x / IMAGE_SCALE;
+    int yy = y / IMAGE_SCALE;
+
     // Heatmap code borrowed from: http://www.andrewnoske.com/wiki/Code_-_heatmaps_and_color_gradients
     const int NUM_COLORS = 7;
     static float color[NUM_COLORS][3] = {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0}, {1, 0, 1}, {1, 1, 1}};
@@ -109,10 +110,11 @@ void put_pixel_false_colour(int x, int y, double v, float jpg_image[3][24][32])
     jpg_image[0][xx][yy] = ir;
     jpg_image[1][xx][yy] = ig;
     jpg_image[2][xx][yy] = ib;
-} 
+}
 
 int main()
 {
+    socket_init();
     static uint16_t eeMLX90640[832];
     float emissivity = 1;
     uint16_t frame[834];
@@ -162,11 +164,11 @@ int main()
     MLX90640_DumpEE(MLX_I2C_ADDR, eeMLX90640);
     MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
     fb_init();
-    
+
     ofstream out_file;
 
     while (1)
-    {   
+    {
         auto start = std::chrono::system_clock::now();
         auto error = MLX90640_GetFrameData(MLX_I2C_ADDR, frame);
         if (error < 0)
@@ -183,7 +185,7 @@ int main()
         MLX90640_BadPixelsCorrection((&mlx90640)->outlierPixels, mlx90640To, 1, &mlx90640);
         for (int yy = 0; yy < 24; yy++)
         {
-                
+
             for (int xx = 0; xx < 32; xx++)
             {
                 float val = mlx90640To[32 * (23 - yy) + xx];
@@ -197,12 +199,23 @@ int main()
 
         out_file.open("/home/pi/thermal_readings/temp.txt", ios::out);
         // cout<<"Writing to file "<<"/home/pi/sambaishere/" + filename + "/temp.txt"<<endl;
+        char send_str *= "";
+
         for (int i = 0; i < 24; ++i)
         {
             for (int j = 0; j < 32; ++j)
-                out_file<<temper_readings[i][j] << '\t';
-            out_file<< '\n';
+            {
+                char temp_str *;
+                sprintf(temp_str, " %f", temper_readings[i][j]);
+                strcat(send_str, temp_str);
+            }
+            strcat(send_str, "\n");
         }
+
+        strcat(send_str, "END");
+
+        socket_send(send_str, strlen(send_str));
+    }
 
     // string filename;
     // ifstream new_file;
@@ -217,9 +230,6 @@ int main()
     // getline(new_file, filename);
 
     // new_file.close();
-
-
-
 
     // out_file.open("/home/pi/sambaishere/" + filename + "/jpg_temp.txt", ios::out);
     // // cout<<"Writing to file "<<"/home/pi/sambaishere/" + filename + "/jpg_temp.txt"<<endl;
