@@ -7,7 +7,7 @@ context = zmq.Context()
 footage_socket = context.socket(zmq.PUB)
 footage_socket.connect('tcp://192.168.43.156:5555')
 
-camera = cv2.VideoCapture(-1)  # init the camera
+camera = cv2.VideoCapture(0)  # init the camera
 
 while True:
     try:

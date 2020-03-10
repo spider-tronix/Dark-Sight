@@ -199,13 +199,13 @@ int main()
 
         out_file.open("/home/pi/thermal_readings/temp.txt", ios::out);
         // cout<<"Writing to file "<<"/home/pi/sambaishere/" + filename + "/temp.txt"<<endl;
-        char send_str *= "";
-
+        char* send_str ;
+	strcat(send_str, "\0");
         for (int i = 0; i < 24; ++i)
         {
             for (int j = 0; j < 32; ++j)
             {
-                char temp_str *;
+                char* temp_str;
                 sprintf(temp_str, " %f", temper_readings[i][j]);
                 strcat(send_str, temp_str);
             }

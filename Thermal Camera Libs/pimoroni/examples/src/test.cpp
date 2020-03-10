@@ -97,7 +97,8 @@ int main(){
             std::cout << std::endl;
         }
         //std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        printf("\x1b[33A");
+	printf("End");        
+	printf("\x1b[33A");
     }
     return 0;
 }
