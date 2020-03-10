@@ -162,6 +162,8 @@ int main()
     MLX90640_DumpEE(MLX_I2C_ADDR, eeMLX90640);
     MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
     fb_init();
+    
+    ofstream out_file;
 
     while (!kbhit())
     {   
@@ -192,44 +194,46 @@ int main()
         auto end = std::chrono::system_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
         std::this_thread::sleep_for(std::chrono::microseconds(frame_time - elapsed));
-    }
-    string filename;
-    ifstream new_file;
 
-    new_file.open("/home/pi/sambaishere/timestamp.txt", ios::in);
-    if(!new_file)
-    {
-        cout<<"no file\n";
-        return 0;
-    }
-    // new_file >> filename;
-    getline(new_file, filename);
-
-    new_file.close();
-
-    ofstream out_file;
-    out_file.open("/home/pi/sambaishere/" + filename + "/temp.txt", ios::out);
-    cout<<"Writing to file "<<"/home/pi/sambaishere/" + filename + "/temp.txt"<<endl;
-    for (int i = 0; i < 24; ++i)
-    {
-        for (int j = 0; j < 32; ++j)
-            out_file<<temper_readings[i][j] << '\t';
-        out_file<< '\n';
-    }
-
-    out_file.close();
-    out_file.open("/home/pi/sambaishere/" + filename + "/jpg_temp.txt", ios::out);
-    cout<<"Writing to file "<<"/home/pi/sambaishere/" + filename + "/jpg_temp.txt"<<endl;
-    for (int c = 0; c < 3; ++c)
-    {
+        out_file.open("/home/pi/thermal_readings/temp.txt", ios::out);
+        // cout<<"Writing to file "<<"/home/pi/sambaishere/" + filename + "/temp.txt"<<endl;
         for (int i = 0; i < 24; ++i)
         {
             for (int j = 0; j < 32; ++j)
-                out_file << int(jpg_image[c][i][j]) << '\t';
-            out_file << '\n';
+                out_file<<temper_readings[i][j] << '\t';
+            out_file<< '\n';
         }
-        out_file << "\n#\n";
+        cout<<"Printing\n";
     }
+    // string filename;
+    // ifstream new_file;
+
+    // new_file.open("/home/pi/sambaishere/timestamp.txt", ios::in);
+    // if(!new_file)
+    // {
+    //     cout<<"no file\n";
+    //     return 0;
+    // }
+    // // new_file >> filename;
+    // getline(new_file, filename);
+
+    // new_file.close();
+
+
+
+
+    // out_file.open("/home/pi/sambaishere/" + filename + "/jpg_temp.txt", ios::out);
+    // // cout<<"Writing to file "<<"/home/pi/sambaishere/" + filename + "/jpg_temp.txt"<<endl;
+    // for (int c = 0; c < 3; ++c)
+    // {
+    //     for (int i = 0; i < 24; ++i)
+    //     {
+    //         for (int j = 0; j < 32; ++j)
+    //             out_file << int(jpg_image[c][i][j]) << '\t';
+    //         out_file << '\n';
+    //     }
+    //     out_file << "\n#\n";
+    // }
 
     out_file.close();
 
