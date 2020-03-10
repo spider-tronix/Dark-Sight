@@ -165,7 +165,7 @@ int main()
     
     ofstream out_file;
 
-    while (!kbhit())
+    while (1)
     {   
         auto start = std::chrono::system_clock::now();
         auto error = MLX90640_GetFrameData(MLX_I2C_ADDR, frame);
@@ -203,8 +203,7 @@ int main()
                 out_file<<temper_readings[i][j] << '\t';
             out_file<< '\n';
         }
-        cout<<"Printing\n";
-    }
+
     // string filename;
     // ifstream new_file;
 
