@@ -1,6 +1,8 @@
 import socket
 import time
 
+import numpy as np
+
 
 class Netcat:
     """ Python 'netcat like' module """
@@ -40,11 +42,29 @@ class Netcat:
 # start a new Netcat() instance
 nc = Netcat('192.168.43.156', 2000)
 
-while True:
-    # get to the prompt
-    tick = time.time()
-    # print(nc.read_until('End'))
-    # print(nc.read(12))
-    print(nc.read_until('End'))
-    tock = time.time()
-    print(-(tick - tock))
+
+def stdout2arr(string):
+    tem_row = list(string.strip().split('\n'))
+    temp = []
+    for col in tem_row:
+        temp.append(list(map(float, col.strip().split(' '))))
+    temp = np.array(temp)
+
+    temp = np.flipud(temp)
+    temp = np.fliplr(temp)
+    return temp
+
+
+def main():
+    _ = nc.read_until('End')
+    while True:
+        tick = time.time()
+        data = nc.read_until('End')
+        data = data[data.find('Subpage:') + 11:-4]
+        proc = stdout2arr(data)
+        tock = time.time()
+        print(-(tick - tock))
+
+
+if __name__ == '__main__':
+    main()

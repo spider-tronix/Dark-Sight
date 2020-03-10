@@ -29,7 +29,7 @@ class ThermalCamera:
         file.close()
         file = open('/home/syzygianinfern0/sambashare/' + filename + '/jpg_temp.txt', 'r')
 
-        while (not file):
+        while not file:
             file = open('/home/syzygianinfern0/sambashare/' + filename + '/jpg_temp.txt', 'r')
 
         string = ""
