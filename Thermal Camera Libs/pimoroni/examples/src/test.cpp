@@ -6,17 +6,17 @@
 #include <thread>
 #include "headers/MLX90640_API.h"
 
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN    "\x1b[36m"
-#define ANSI_COLOR_NONE    "\x1b[30m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_RED     ""
+#define ANSI_COLOR_GREEN   ""
+#define ANSI_COLOR_YELLOW  ""
+#define ANSI_COLOR_BLUE    ""
+#define ANSI_COLOR_MAGENTA ""
+#define ANSI_COLOR_CYAN    ""
+#define ANSI_COLOR_NONE    ""
+#define ANSI_COLOR_RESET   ""
 
-//#define FMT_STRING "%+06.2f "
-#define FMT_STRING "\u2588\u2588"
+#define FMT_STRING "%+06.2f "
+// #define FMT_STRING "\u2588\u2588"
 
 #define MLX_I2C_ADDR 0x33
 
@@ -73,25 +73,25 @@ int main(){
 
                 if(val > 99.99) val = 99.99;
                 if(val > 32.0){
-                    printf(ANSI_COLOR_MAGENTA FMT_STRING ANSI_COLOR_RESET, val);
+                    printf(FMT_STRING ANSI_COLOR_RESET, val) ;
                 }
                 else if(val > 29.0){
-                    printf(ANSI_COLOR_RED FMT_STRING ANSI_COLOR_RESET, val);
+                    printf(FMT_STRING ANSI_COLOR_RESET, val) ;
                 }
                 else if (val > 26.0){
-                    printf(ANSI_COLOR_YELLOW FMT_STRING ANSI_COLOR_YELLOW, val);
+                    printf(FMT_STRING ANSI_COLOR_RESET, val) ;
                 }
                 else if ( val > 20.0 ){
-                    printf(ANSI_COLOR_NONE FMT_STRING ANSI_COLOR_RESET, val);
+                    printf(FMT_STRING ANSI_COLOR_RESET, val) ;
                 }
                 else if (val > 17.0) {
-                    printf(ANSI_COLOR_GREEN FMT_STRING ANSI_COLOR_RESET, val);
+                    printf(FMT_STRING ANSI_COLOR_RESET, val) ;
                 }
                 else if (val > 10.0) {
-                    printf(ANSI_COLOR_CYAN FMT_STRING ANSI_COLOR_RESET, val);
+                    printf(FMT_STRING ANSI_COLOR_RESET, val) ;
                 }
                 else {
-                    printf(ANSI_COLOR_BLUE FMT_STRING ANSI_COLOR_RESET, val);
+                    printf(FMT_STRING ANSI_COLOR_RESET, val) ;
                 }
             }
             std::cout << std::endl;
