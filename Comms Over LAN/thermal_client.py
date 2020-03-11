@@ -89,7 +89,9 @@ def main():
         tock = time.time()
         print(-(tick - tock))
 
-        vis = cv2.cvtColor(proc / 50, cv2.COLOR_GRAY2BGR)
+        # proc = np.interp(proc, [np.min(proc) - 1, np.max(proc) + 1], [0, 255])
+        proc = np.interp(proc, [20 - 1, 36 + 1], [0, 255])
+        vis = cv2.cvtColor(proc.astype(np.uint8), cv2.COLOR_GRAY2BGR)
         vis = cv2.resize(vis, (960, 720))
 
         cv2.imshow(thermal, vis)
