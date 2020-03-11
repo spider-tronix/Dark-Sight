@@ -71,6 +71,12 @@ def stdout2arr(string):
     return temp
 
 
+def arr2heatmap(arr):
+    heatmap = cv2.normalize(arr, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    return heatmap
+
+
 def main():
     nc = Netcat('192.168.43.156', 2000)
     cam = ThermalCamera()
@@ -79,6 +85,7 @@ def main():
     _ = nc.read_until('End')
     thermal = 'Thermal Feed'
     cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
+
     while True:
         tick = time.time()
 
@@ -89,12 +96,9 @@ def main():
         tock = time.time()
         print(-(tick - tock))
 
-        # proc = np.interp(proc, [np.min(proc) - 1, np.max(proc) + 1], [0, 255])
-        proc = np.interp(proc, [20 - 1, 36 + 1], [0, 255])
-        vis = cv2.cvtColor(proc.astype(np.uint8), cv2.COLOR_GRAY2BGR)
-        vis = cv2.resize(vis, (960, 720))
-
-        cv2.imshow(thermal, vis)
+        vis = cv2.resize(proc, (960, 720))
+        heatmap = arr2heatmap(vis)
+        cv2.imshow(thermal, heatmap)
         ch = cv2.waitKey(1)
         if ch == ord('q'):
             break
