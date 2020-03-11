@@ -1,7 +1,9 @@
 import socket
 import time
 
+import cv2
 import numpy as np
+import paramiko
 
 
 class Netcat:
@@ -22,8 +24,7 @@ class Netcat:
 
     def read_until(self, data):
         """ Read data into the buffer until we have data """
-
-        while not data in self.buff:
+        while data not in self.buff:
             self.buff += self.conn.recv(1024).decode('ascii')
 
         pos = self.buff.find(data)
@@ -39,8 +40,22 @@ class Netcat:
         self.socket.close()
 
 
-# start a new Netcat() instance
-nc = Netcat('192.168.43.156', 2000)
+class ThermalCamera:
+    def __init__(self):
+        self.port = '22'
+        self.uname = 'pi'
+        self.passd = 'sharan'
+        self.ip = '192.168.43.38'
+        self.pi_ssh = paramiko.SSHClient()
+        self.connect_ssh()
+
+    def connect_ssh(self):
+        self.pi_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.pi_ssh.connect(hostname=self.ip, username=self.uname, password=self.passd)
+
+    def trigger_camera(self):
+        _ = self.pi_ssh.exec_command("./test | nc 192.168.43.156 2000")
+        # _ = self.pi_ssh.exec_command("fbuf", timeout=0)
 
 
 def stdout2arr(string):
@@ -48,7 +63,7 @@ def stdout2arr(string):
     temp = []
     for col in tem_row:
         temp.append(list(map(float, col.strip().split(' '))))
-    temp = np.array(temp)
+    temp = np.array(temp, dtype=np.float32)
 
     temp = np.flipud(temp)
     temp = np.fliplr(temp)
@@ -56,15 +71,32 @@ def stdout2arr(string):
 
 
 def main():
+    nc = Netcat('192.168.43.156', 2000)
+    cam = ThermalCamera()
+    cam.trigger_camera()
+
     _ = nc.read_until('End')
+    thermal = 'Thermal Feed'
+    cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
     while True:
         tick = time.time()
+
         data = nc.read_until('End')
         data = data[data.find('Subpage:') + 11:-4]
         proc = stdout2arr(data)
+
         tock = time.time()
         print(-(tick - tock))
+
+        vis = cv2.cvtColor(proc / 50, cv2.COLOR_GRAY2BGR)
+        vis = cv2.resize(vis, (960, 720))
+
+        cv2.imshow(thermal, vis)
+        ch = cv2.waitKey(1)
+        if ch == ord('q'):
+            break
 
 
 if __name__ == '__main__':
     main()
+    cv2.destroyAllWindows()
