@@ -87,21 +87,25 @@ def main():
     cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
 
     while True:
-        tick = time.time()
+        try:
+            tick = time.time()
 
-        data = nc.read_until('End')
-        data = data[data.find('Subpage:') + 11:-4]
-        proc = stdout2arr(data)
+            data = nc.read_until('End')
+            data = data[data.find('Subpage:') + 11:-4]
+            proc = stdout2arr(data)
 
-        tock = time.time()
-        print(-(tick - tock))
+            tock = time.time()
+            print(-(tick - tock))
 
-        vis = cv2.resize(proc, (960, 720))
-        heatmap = arr2heatmap(vis)
-        cv2.imshow(thermal, heatmap)
-        ch = cv2.waitKey(1)
-        if ch == ord('q'):
-            break
+            vis = cv2.resize(proc, (960, 720))
+            heatmap = arr2heatmap(vis)
+            cv2.imshow(thermal, heatmap)
+            ch = cv2.waitKey(1)
+            if ch == ord('q'):
+                break
+        except Exception as e:
+            print(e)
+            print(data)
 
 
 if __name__ == '__main__':
