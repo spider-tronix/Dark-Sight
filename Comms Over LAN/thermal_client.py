@@ -13,13 +13,14 @@ class Netcat:
         self.buff = ""
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((ip, port))
+        self.conn = None
 
+    def listen(self):
         self.socket.listen(2)
         self.conn, addr = self.socket.accept()
 
     def read(self, length=1024):
         """ Read 1024 bytes off the socket """
-
         return self.conn.recv(length)
 
     def read_until(self, data):
@@ -55,7 +56,7 @@ class ThermalCamera:
 
     def trigger_camera(self):
         _ = self.pi_ssh.exec_command("./test | nc 192.168.43.156 2000")
-        # _ = self.pi_ssh.exec_command("fbuf", timeout=0)
+        # _ = self.pi_ssh.exec_command("timeout 3 fbuf")
 
 
 def stdout2arr(string):
@@ -74,7 +75,7 @@ def main():
     nc = Netcat('192.168.43.156', 2000)
     cam = ThermalCamera()
     cam.trigger_camera()
-
+    nc.listen()
     _ = nc.read_until('End')
     thermal = 'Thermal Feed'
     cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
