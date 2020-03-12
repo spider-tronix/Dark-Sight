@@ -4,9 +4,9 @@ import time
 
 import cv2
 import numpy as np
+import paramiko
 import ray
 import zmq
-from pssh.clients.native.parallel import ParallelSSHClient
 
 ray.init()
 
@@ -29,10 +29,12 @@ class PiCam:
 
 class Netcat:
     """ Python 'netcat like' module """
+    socket_args = {'family': socket.AF_INET,
+                   'type': socket.SOCK_STREAM}
 
     def __init__(self, ip, port):
         self.buff = ""
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket = socket.socket(**self.socket_args)
         self.socket.bind((ip, port))
         self.conn = None
 
@@ -60,6 +62,22 @@ class Netcat:
 
     def close(self):
         self.socket.close()
+        self.conn.close()
+
+
+def custom_serializer(obj):
+    obj.close()
+    return obj.socket_args
+
+
+def custom_deserializer(value):
+    obj = Netcat('192.168.43.156', 2000)
+    obj.listen()
+    return obj
+
+
+ray.register_custom_serializer(
+    Netcat, serializer=custom_serializer, deserializer=custom_deserializer)
 
 
 def stdout2arr(string):
@@ -88,10 +106,21 @@ class SSHPi:
         self.uname = 'pi'
         self.passd = 'sharan'
         self.ip = '192.168.43.38'
-        self.pi_ssh = ParallelSSHClient(hosts=[self.ip], user=self.uname, password=self.passd)
+        # self.pi_ssh = ParallelSSHClient(hosts=[self.ip], user=self.uname, password=self.passd)
+        self.pi_ssh = paramiko.SSHClient()
+        self.connect_ssh()
+
+    def connect_ssh(self):
+        self.pi_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.pi_ssh.connect(hostname=self.ip, username=self.uname, password=self.passd)
 
     def trigger_thermal_camera(self):
-        self.pi_ssh.run_command(command='tmux new-session -d "~/test | nc 192.168.43.156 2000"')
+        # self.pi_ssh.run_command(command='tmux new-session -d "while true; do (~/test | nc 192.168.43.156 2000); done"')
+        # self.pi_ssh.run_command(command='while true; do (~/test | nc 192.168.43.156 2000); done')
+        _, _, err = self.pi_ssh.exec_command(
+            command='tmux send -t 0 "while true; do (~/test | nc 192.168.43.156 2000); done" ENTER',
+            get_pty=True)
+        print(f"Errors : {err.readlines()}")
         print("Thermal camera is Live!")
 
     def trigger_pi_camera(self):
@@ -111,6 +140,7 @@ def read_proc_thermal(nc):
     tick = time.time()
 
     data = nc.read_until('End')
+    print(data)
     data = data[data.find('Subpage:') + 11:-4]
     proc = stdout2arr(data)
 
@@ -127,11 +157,13 @@ def main():
     sshpi = SSHPi()
     nc = Netcat('192.168.43.156', 2000)
 
-    sshpi.trigger_pi_camera()
+    # sshpi.trigger_pi_camera()
     sshpi.trigger_thermal_camera()
 
     nc.listen()
-    _ = nc.read_until('End')
+    one = nc.read_until('End')
+    print(one)
+    nc.socket.close()
     thermal = 'MLX90640 Feed'
     cam = 'PiCam Feed'
     cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
