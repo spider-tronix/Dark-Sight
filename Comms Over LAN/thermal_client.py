@@ -3,7 +3,7 @@ import time
 
 import cv2
 import numpy as np
-import paramiko
+from pssh.clients.native.parallel import ParallelSSHClient
 
 
 class Netcat:
@@ -47,16 +47,30 @@ class ThermalCamera:
         self.uname = 'pi'
         self.passd = 'sharan'
         self.ip = '192.168.43.38'
-        self.pi_ssh = paramiko.SSHClient()
+        self.pi_ssh = ParallelSSHClient(hosts=[self.ip], user=self.uname, password=self.passd)
         self.connect_ssh()
 
     def connect_ssh(self):
-        self.pi_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.pi_ssh.connect(hostname=self.ip, username=self.uname, password=self.passd)
+        # self.pi_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # self.pi_ssh.connect(hostname=self.ip, username=self.uname, password=self.passd)
+        pass
 
     def trigger_camera(self):
-        _ = self.pi_ssh.exec_command("./test | nc 192.168.43.156 2000")
-        # _ = self.pi_ssh.exec_command("timeout 3 fbuf")
+        # _, _, err = self.pi_ssh.exec_command(
+        #     'tmux attach-session -d "~/test | nc 192.168.43.156 2000"', get_pty=True)
+        # _, _, err = self.pi_ssh.exec_command('tmux send -t one "~/test | nc 192.168.43.156 2000" ENTER', get_pty=True)
+        # _, _, err = self.pi_ssh.exec_command('tmux send -t two "timeout 4 ~/bin/fbuf" ENTER', get_pty=True)
+        # _ = self.pi_ssh.exec_command('tmux new-session -d "timeout 4 ~/bin/fbuf"')
+
+        self.pi_ssh.run_command(command='tmux new-session -d "~/test | nc 192.168.43.156 2000"')
+
+        # self.revive_cam()
+        # err = err.readlines()
+        # print(f"Errors on cmd : {''.join(err)}")
+
+    def revive_cam(self):
+        # self.pi_ssh.run_command('tmux new-session -d "timeout 3 fbuf"')
+        self.pi_ssh.run_command('tmux new-session -d "fbuf"')
 
 
 def stdout2arr(string):
@@ -81,6 +95,7 @@ def main():
     nc = Netcat('192.168.43.156', 2000)
     cam = ThermalCamera()
     cam.trigger_camera()
+
     nc.listen()
     _ = nc.read_until('End')
     thermal = 'Thermal Feed'
@@ -105,7 +120,7 @@ def main():
                 break
         except Exception as e:
             print(e)
-            print(data)
+            # cam.revive_cam()
 
 
 if __name__ == '__main__':
