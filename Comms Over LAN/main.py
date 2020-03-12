@@ -11,6 +11,7 @@ from pssh.clients.native.parallel import ParallelSSHClient
 ray.init()
 
 
+@ray.remote
 class PiCam:
     def __init__(self):
         context = zmq.Context()
@@ -23,9 +24,7 @@ class PiCam:
         img = base64.b64decode(frame)
         npimg = np.fromstring(img, dtype=np.uint8)
         source = cv2.imdecode(npimg, 1)
-        cv2.imshow("Stream", source)
-        ch = cv2.waitKey(1)
-        return ch
+        return source
 
 
 class Netcat:
@@ -107,8 +106,24 @@ class SSHPi:
         print("Tmux server killed :(")
 
 
+@ray.remote
+def read_proc_thermal(nc):
+    tick = time.time()
+
+    data = nc.read_until('End')
+    data = data[data.find('Subpage:') + 11:-4]
+    proc = stdout2arr(data)
+
+    tock = time.time()
+    print(-(tick - tock))
+
+    vis = cv2.resize(proc, (960, 720))
+    heatmap = arr2heatmap(vis)
+    return heatmap
+
+
 def main():
-    picam_recv = PiCam()
+    picam_recv = PiCam.remote()
     sshpi = SSHPi()
     nc = Netcat('192.168.43.156', 2000)
 
@@ -117,27 +132,20 @@ def main():
 
     nc.listen()
     _ = nc.read_until('End')
-    thermal = 'Thermal Feed'
+    thermal = 'MLX90640 Feed'
+    cam = 'PiCam Feed'
     cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
 
     while True:
         try:
-            tick = time.time()
-
-            data = nc.read_until('End')
-            data = data[data.find('Subpage:') + 11:-4]
-            proc = stdout2arr(data)
-
-            tock = time.time()
-            print(-(tick - tock))
-
-            vis = cv2.resize(proc, (960, 720))
-            heatmap = arr2heatmap(vis)
-            ch = picam_recv.recv()
-
+            # img = picam_recv.recv.remote()
+            heatmap = read_proc_thermal.remote(nc)
+            # img, heatmap = ray.get([img, heatmap])
+            # img = ray.get(img)
+            heatmap = ray.get(heatmap)
             cv2.imshow(thermal, heatmap)
+            # cv2.imshow(cam, img)
             ch = cv2.waitKey(1)
-
             if ch == ord('q'):
                 break
 
@@ -150,12 +158,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-"""
-    # sshpi = SSHPi.remote()
-    # sshpi.trigger_pi_camera.remote()
-    # ray.get([
-    #     # sshpi.trigger_thermal_camera().remote(),
-    #     sshpi.trigger_pi_camera.remote()
-    # ])
-"""
