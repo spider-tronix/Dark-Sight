@@ -80,7 +80,8 @@ def stdout2arr(string):
         temp.append(list(map(float, col.strip().split(' '))))
     temp = np.array(temp, dtype=np.float32)
 
-    temp = np.flipud(temp)
+    # temp = np.flipud(temp)
+    temp = np.rot90(temp)
     temp = np.fliplr(temp)
     return temp
 
