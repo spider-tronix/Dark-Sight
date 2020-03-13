@@ -34,7 +34,9 @@ class Netcat:
 
     def __init__(self, ip, port):
         self.buff = ""
-        self.socket = socket.socket(**self.socket_args)
+        # self.socket = socket.socket(**self.socket_args)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((ip, port))
         self.conn = None
 
@@ -115,22 +117,24 @@ class SSHPi:
         self.pi_ssh.connect(hostname=self.ip, username=self.uname, password=self.passd)
 
     def trigger_thermal_camera(self):
-        # self.pi_ssh.run_command(command='tmux new-session -d "while true; do (~/test | nc 192.168.43.156 2000); done"')
+        self.pi_ssh.exec_command(
+            command='tmux new-session -d " ~/test | (while true; do (nc 192.168.43.156 2000); done) "')
+        # self.pi_ssh.exec_command(command='tmux new-session -d "~/test | nc 192.168.43.156 2000"')
         # self.pi_ssh.run_command(command='while true; do (~/test | nc 192.168.43.156 2000); done')
-        _, _, err = self.pi_ssh.exec_command(
-            command='tmux send -t 0 "while true; do (~/test | nc 192.168.43.156 2000); done" ENTER',
-            get_pty=True)
-        print(f"Errors : {err.readlines()}")
+        # _, _, err = self.pi_ssh.exec_command(
+        #     command='tmux send -t 0 "while true; do (~/test | nc 192.168.43.156 2000); done" ENTER',
+        #     get_pty=True)
+        # print(f"Errors : {err.readlines()}")
         print("Thermal camera is Live!")
 
     def trigger_pi_camera(self):
-        self.pi_ssh.run_command(
+        self.pi_ssh.exec_command(
             command=r'tmux new-session -d '
                     r'"~/env/bin/python3 Dark-Sight/Comms\ Over\ LAN/Video\ Capture\ Over\ TCP/server.py"')
         print("PiCam is Live!")
 
     def tmux_kill(self):
-        self.pi_ssh.run_command(
+        self.pi_ssh.exec_command(
             command=r'tmux kill-server')
         print("Tmux server killed :(")
 
@@ -140,7 +144,7 @@ def read_proc_thermal(nc):
     tick = time.time()
 
     data = nc.read_until('End')
-    print(data)
+    print(f"Data : {data}")
     data = data[data.find('Subpage:') + 11:-4]
     proc = stdout2arr(data)
 
@@ -153,7 +157,7 @@ def read_proc_thermal(nc):
 
 
 def main():
-    picam_recv = PiCam.remote()
+    # picam_recv = PiCam.remote()
     sshpi = SSHPi()
     nc = Netcat('192.168.43.156', 2000)
 
@@ -165,7 +169,7 @@ def main():
     print(one)
     nc.socket.close()
     thermal = 'MLX90640 Feed'
-    cam = 'PiCam Feed'
+    # cam = 'PiCam Feed'
     cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
 
     while True:
