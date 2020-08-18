@@ -73,7 +73,7 @@ def custom_serializer(obj):
 
 
 def custom_deserializer(value):
-    obj = Netcat('192.168.43.156', 2000)
+    obj = Netcat('192.168.0.104', 2000)
     obj.listen()
     return obj
 
@@ -106,8 +106,8 @@ class SSHPi:
     def __init__(self):
         self.port = '22'
         self.uname = 'pi'
-        self.passd = 'sharan'
-        self.ip = '192.168.43.38'
+        self.passd = 'ni6ga2rd'
+        self.ip = '192.168.0.109'
         # self.pi_ssh = ParallelSSHClient(hosts=[self.ip], user=self.uname, password=self.passd)
         self.pi_ssh = paramiko.SSHClient()
         self.connect_ssh()
@@ -118,7 +118,7 @@ class SSHPi:
 
     def trigger_thermal_camera(self):
         self.pi_ssh.exec_command(
-            command='tmux new-session -d " ~/test | (while true; do (nc 192.168.43.156 2000); done) "')
+            command='tmux new-session -d " ~/test | (while true; do (nc 192.168.0.104 2000); done) "')
         # self.pi_ssh.exec_command(command='tmux new-session -d "~/test | nc 192.168.43.156 2000"')
         # self.pi_ssh.run_command(command='while true; do (~/test | nc 192.168.43.156 2000); done')
         # _, _, err = self.pi_ssh.exec_command(
@@ -159,7 +159,7 @@ def read_proc_thermal(nc):
 def main():
     # picam_recv = PiCam.remote()
     sshpi = SSHPi()
-    nc = Netcat('192.168.43.156', 2000)
+    nc = Netcat('192.168.0.104', 2000)
 
     # sshpi.trigger_pi_camera()
     sshpi.trigger_thermal_camera()
