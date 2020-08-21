@@ -1,20 +1,30 @@
 from cv2 import cv2
 
-def main():
+
+def initialize():
+
+    print('Connecting to PI cam...')
     cap = cv2.VideoCapture('udp://192.168.0.104:1234',cv2.CAP_FFMPEG)
-    print('Opening PI cam...')
     while not cap.isOpened():
         
         cv2.waitKey(10)
     print('Pi cam connected!')
+    return cap
+
+
+def pi_img(cap):
+
+    ret, frame = cap.read()
+
+    # cv2.imshow('image here', frame)
+
+    return frame
+    
+
+def main():
+    cap = initialize()
     while True:
-        ret, frame = cap.read()
-
-        if not ret:
-            print('frame empty')
-            break
-
-        cv2.imshow('image', frame)
+        pi_img(cap)
 
         if cv2.waitKey(1)&0XFF == ord('q'):
             break

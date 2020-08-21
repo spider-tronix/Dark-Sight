@@ -1,3 +1,7 @@
+from multiprocessing import Process, Manager, Array
+
+import picam_client as picam
+
 import socket
 import time
 
@@ -5,6 +9,7 @@ from cv2 import cv2
 import numpy as np
 from pssh.clients.native.parallel import ParallelSSHClient
 
+op = Array('d',24 * 32, lock=False)
 
 class Netcat:
     """ Python 'netcat like' module """
@@ -91,7 +96,8 @@ def arr2heatmap(arr):
     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
     return heatmap
 
-def read(op):
+def f():
+    global op
     nc = Netcat('192.168.0.104', 2000)
     cam = ThermalCamera()
     cam.trigger_camera()
@@ -103,42 +109,18 @@ def read(op):
         try:
             data = nc.read_until('End')
             data = data[data.find('Subpage:') + 11:-4]
-            op = stdout2arr(data)
+            op[:] = list(np.concatenate(stdout2arr(data)))
+            # print(op)
         except Exception as e:
             print(e)
-
-def main():
-    nc = Netcat('192.168.0.104', 2000)
-    cam = ThermalCamera()
-    cam.trigger_camera()
-
-    nc.listen()
-    _ = nc.read_until('End')
-    thermal = 'Thermal Feed'
-    cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
-
-    while True:
-        try:
-            tick = time.time()
-
-            data = nc.read_until('End')
-            data = data[data.find('Subpage:') + 11:-4]
-            proc = stdout2arr(data)
-
-            tock = time.time()
-            print(-(tick - tock))
-
-            vis = cv2.resize(proc, (960, 720))
-            heatmap = arr2heatmap(vis)
-            cv2.imshow(thermal, heatmap)
-            ch = cv2.waitKey(1)
-            if ch == ord('q'):
-                break
-        except Exception as e:
-            print(e)
-            # cam.revive_cam()
 
 
 if __name__ == '__main__':
-    main()
-    cv2.destroyAllWindows()
+
+    p = Process(target= f)
+    p.start()
+
+
+    while True:
+        print(op[:])
+        # pass
