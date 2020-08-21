@@ -1,37 +1,40 @@
 from cv2 import cv2
 
 
-def initialize():
+class PiCamera:
+    def __init__(self):
 
-    print('Connecting to PI cam...')
-    cap = cv2.VideoCapture('udp://192.168.0.104:1234',cv2.CAP_FFMPEG)
-    
-    while not cap.isOpened():
-        cv2.waitKey(10)
+        print("Connecting to PI cam...")
+        self.cap = cv2.VideoCapture("udp://192.168.0.104:1234", cv2.CAP_FFMPEG)
 
-    print('Pi cam connected!')
-    return cap
+        while not self.cap.isOpened():
+            cv2.waitKey(10)
 
+        print("Pi cam connected!")
 
-def pi_img(cap):
-    
-    ret, frame = cap.read()
+    def __call__(self):
 
-    # cv2.imshow('image here', frame)
+        _, frame = self.cap.read()
 
-    return frame
-    
+        # cv2.imshow('image here', frame)
+        return frame
+
+    def release(self):
+        self.cap.release()
+
 
 def main():
-    cap = initialize()
+    picam = PiCamera()
     while True:
-        pi_img(cap)
 
-        if cv2.waitKey(1)&0XFF == ord('q'):
+        cv2.imshow("img", picam())
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
-    cap.release()
+    picam.release()
     cv2.destroyAllWindows()
 
-if __name__ == "__main__": 
+
+if __name__ == "__main__":
     main()

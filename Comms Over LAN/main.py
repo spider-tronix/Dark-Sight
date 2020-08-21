@@ -1,6 +1,6 @@
 from multiprocessing import Process, Array
 
-import picam_client as picam
+from picam_client import PiCamera
 
 import socket
 import time
@@ -9,6 +9,7 @@ from cv2 import cv2
 import collections
 import numpy as np
 from pssh.clients.native.parallel import ParallelSSHClient
+import warnings
 
 op = Array("d", 24 * 32, lock=False)  # Global variable (shared memory between threads)
 
@@ -121,6 +122,7 @@ def thermal_process():
             op[:] = list(np.concatenate(stdout2arr(data)))
             # print(op)
         except Exception as e:
+            cam.revive_cam()
             print(e)
 
 
@@ -129,7 +131,7 @@ def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32)):
     Readings = collections.namedtuple("Readings", ["thermal", "normal"])
 
     thermal_readings = np.reshape(op[:], (-1, 32))
-    normal_img = picam.pi_img(cap)
+    normal_img = picam()
 
     vis = cv2.resize(thermal_readings, (thermalimg_op_size[0], thermalimg_op_size[1]))
     heatmap = arr2heatmap(vis)
@@ -151,15 +153,19 @@ def main():
         cv2.imshow("image", reading.normal)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
+            print("Exiting...")
             break
 
-    cap.release()
+    picam.release()
     cv2.destroyAllWindows()
+    p.terminate()
 
 
 if __name__ == "__main__":
 
-    cap = picam.initialize()
+    warnings.filterwarnings("ignore")
+
+    picam = PiCamera()
 
     p = Process(target=thermal_process)
     p.start()
