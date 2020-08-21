@@ -117,10 +117,21 @@ def f():
 
 if __name__ == '__main__':
 
+    cap = picam.initialize()
+
     p = Process(target= f)
     p.start()
 
 
     while True:
         print(op[:])
+
+        pi_frame = picam.pi_img(cap)
+        cv2.imshow('image', pi_frame)
+
+        if cv2.waitKey(10)&0XFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
         # pass
