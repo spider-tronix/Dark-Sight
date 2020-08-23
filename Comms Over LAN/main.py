@@ -22,17 +22,20 @@ class Netcat:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((ip, port))
         self.conn = None
+        self.start = "Subpage"
 
     def listen(self):
-        self.socket.listen(2)
+
+        self.socket.listen(1)
         self.conn, addr = self.socket.accept()
 
     def read(self, length=1024):
         """ Read 1024 bytes off the socket """
-        return self.conn.recv(length)
+        return self.conn.recv(length).decode('ascii')
 
     def read_until(self, data):
         """ Read data into the buffer until we have data """
+        # self.buff = ""
         while data not in self.buff:
             self.buff += self.conn.recv(1024).decode("ascii")
 
@@ -47,7 +50,6 @@ class Netcat:
 
     def close(self):
         self.socket.close()
-
 
 class ThermalCamera:
     def __init__(self):
@@ -73,7 +75,7 @@ class ThermalCamera:
         # _ = self.pi_ssh.exec_command('tmux new-session -d "timeout 4 ~/bin/fbuf"')
 
         self.pi_ssh.run_command(
-            command='tmux new-session -d "~/test | nc 192.168.0.104 2000"'
+            command='tmux new-session -d "~/test_new"'
         )
 
         # self.revive_cam()
@@ -108,7 +110,7 @@ def arr2heatmap(arr):
 
 def thermal_process():
     global op
-    nc = Netcat("192.168.0.104", 2000)
+    nc = Netcat("192.168.0.104", 1234)
     cam = ThermalCamera()
     cam.trigger_camera()
 

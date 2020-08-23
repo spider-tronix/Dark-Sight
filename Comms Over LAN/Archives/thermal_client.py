@@ -93,7 +93,7 @@ def arr2heatmap(arr):
     return heatmap
 
 def read(op):
-    nc = Netcat('192.168.0.104', 2000)
+    nc = Netcat('192.168.0.104', 1234)
     cam = ThermalCamera()
     cam.trigger_camera()
 
