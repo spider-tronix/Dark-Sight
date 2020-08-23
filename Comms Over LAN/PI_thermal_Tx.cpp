@@ -1,3 +1,12 @@
+/*
+
+To be build using Pimoroni 'make' configs.
+
+Program to be run on RPi.(Triggered by 'main.py')
+
+Uses TCP socket to send thermal readings.
+
+*/
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -36,7 +45,7 @@
 
 #define MLX_I2C_ADDR 0x33
 
-// UDP stuff
+// socket stuff
 int socket_desc;
 struct sockaddr_in server;
 char *message;
@@ -82,7 +91,7 @@ int main(){
     char buf[BUFLEN];
 
     socket_init();
-    int iter = 0;
+    // int iter = 0;
     
     int state = 0;
     printf("Starting...\n");
@@ -135,23 +144,23 @@ int main(){
                 //std::cout << image[32 * y + x] << ",";
                 float val = mlx90640To[32 * (23-y) + x];
 
-                iter+=1;
+                // iter+=1;
 
                 if(val > 99.99) val = 99.99;
                 if(val > 32.0){
                     sprintf(buf,FMT_STRING ANSI_COLOR_RESET, val) ;
                     // printf(FMT_STRING ANSI_COLOR_RESET, val) ; //original
-                    socket_send(buf);  // !! Send through UDP
+                    socket_send(buf);  // !! Send through socket
                 }
                 else if(val > 29.0){
                     sprintf(buf,FMT_STRING ANSI_COLOR_RESET, val) ;
                     // printf(FMT_STRING ANSI_COLOR_RESET, val) ; //original
-                    socket_send(buf);  // !! Send through UDP
+                    socket_send(buf);  // !! Send through socket
                 }
                 else if (val > 26.0){
                     sprintf(buf,FMT_STRING ANSI_COLOR_RESET, val) ;
                     // printf(FMT_STRING ANSI_COLOR_RESET, val) ; //original
-                    socket_send(buf);  // !! Send through UDP
+                    socket_send(buf);  // !! Send through socket
                 }
                 else if ( val > 20.0 ){
                     sprintf(buf,FMT_STRING ANSI_COLOR_RESET, val) ;
@@ -160,25 +169,25 @@ int main(){
                 else if (val > 17.0) {
                     sprintf(buf,FMT_STRING ANSI_COLOR_RESET, val) ;
                     // printf(FMT_STRING ANSI_COLOR_RESET, val) ; //original
-                    socket_send(buf);  // !! Send through UDP
+                    socket_send(buf);  // !! Send through socket
                 }
                 else if (val > 10.0) {
                     sprintf(buf,FMT_STRING ANSI_COLOR_RESET, val) ;
                     // printf(FMT_STRING ANSI_COLOR_RESET, val) ; //original
-                    socket_send(buf);  // !! Send through UDP
+                    socket_send(buf);  // !! Send through socket
                 }
                 else {
                     sprintf(buf,FMT_STRING ANSI_COLOR_RESET, val) ;
                     // printf(FMT_STRING ANSI_COLOR_RESET, val) ; //original
-                    socket_send(buf);  // !! Send through UDP
+                    socket_send(buf);  // !! Send through socket
                 }
                 
             }
             socket_send((char*)"\n");
             //std::cout << std::endl; // !!original
         }
-        printf("%d\n",iter);
-        iter = 0;
+        // printf("%d\n",iter);
+        // iter = 0;
 	//printf("End");   //!!original
     socket_send((char*)"End");     
 	//printf("\x1b[33A"); //!!original
