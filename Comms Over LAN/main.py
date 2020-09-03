@@ -1,4 +1,5 @@
 from multiprocessing import Process, Array
+from scipy.ndimage.filters import gaussian_filter
 
 from picam_client import PiCamera
 
@@ -31,7 +32,7 @@ class Netcat:
 
     def read(self, length=1024):
         """ Read 1024 bytes off the socket """
-        return self.conn.recv(length).decode('ascii')
+        return self.conn.recv(length).decode("ascii")
 
     def read_until(self, data):
         """ Read data into the buffer until we have data """
@@ -50,6 +51,7 @@ class Netcat:
 
     def close(self):
         self.socket.close()
+
 
 class ThermalCamera:
     def __init__(self):
@@ -74,8 +76,9 @@ class ThermalCamera:
         # _, _, err = self.pi_ssh.exec_command('tmux send -t two "timeout 4 ~/bin/fbuf" ENTER', get_pty=True)
         # _ = self.pi_ssh.exec_command('tmux new-session -d "timeout 4 ~/bin/fbuf"')
 
+        self.pi_ssh.run_command(command='tmux new-session -d "~/test_new"')
         self.pi_ssh.run_command(
-            command='tmux new-session -d "~/test_new"'
+            command='tmux new-session -d "bash ~/Desktop/Script/ds_startup.sh"'
         )
 
         # self.revive_cam()
@@ -100,7 +103,15 @@ def stdout2arr(string):
     return temp
 
 
+def print_arr(arr):
+    for row in arr:
+        for val in row:
+            print("{:4}".format(val))
+        print()
+
+
 def arr2heatmap(arr):
+    # print_arr(arr)
     heatmap = cv2.normalize(
         arr, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U
     )
@@ -113,8 +124,8 @@ def thermal_process():
     nc = Netcat("192.168.0.104", 1234)
     cam = ThermalCamera()
     cam.trigger_camera()
-
     nc.listen()
+
     _ = nc.read_until("End")
 
     while True:
@@ -128,12 +139,15 @@ def thermal_process():
             print(e)
 
 
-def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32)):
+def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filter=True):
 
     Readings = collections.namedtuple("Readings", ["thermal", "normal"])
 
     thermal_readings = np.reshape(op[:], (-1, 32))
     normal_img = picam()
+
+    if apply_filter:
+        thermal_readings = gaussian_filter(thermal_readings, sigma=1.5)
 
     vis = cv2.resize(thermal_readings, (thermalimg_op_size[0], thermalimg_op_size[1]))
     heatmap = arr2heatmap(vis)
@@ -167,10 +181,10 @@ if __name__ == "__main__":
 
     warnings.filterwarnings("ignore")
 
-    picam = PiCamera()
-
     p = Process(target=thermal_process)
     p.start()
+
+    picam = PiCamera()
 
     main()
 
