@@ -138,7 +138,11 @@ def thermal_process():
             cam.revive_cam()
             print(e)
 
+def denoise_array(image):
 
+    op = gaussian_filter(image, sigma=float(cv2.getTrackbarPos('R','image')/200))
+    return op
+    
 def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filter=True):
 
     Readings = collections.namedtuple("Readings", ["thermal", "normal"])
@@ -147,7 +151,7 @@ def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filte
     normal_img = picam()
 
     if apply_filter:
-        thermal_readings = gaussian_filter(thermal_readings, sigma=1.5)
+        thermal_readings = denoise_array(thermal_readings)
 
     vis = cv2.resize(thermal_readings, (thermalimg_op_size[0], thermalimg_op_size[1]))
     heatmap = arr2heatmap(vis)
@@ -166,7 +170,7 @@ def main():
         reading = read_sensors(thermalimg_op_size=(480, 360))
 
         cv2.imshow("thermal", reading.thermal)
-        cv2.imshow("image", reading.normal)
+        cv2.imshow("Normal", reading.normal)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             print("Exiting...")
@@ -175,9 +179,12 @@ def main():
     picam.release()
     cv2.destroyAllWindows()
     p.terminate()
-
+def nothing(nil):
+    pass
 
 if __name__ == "__main__":
+    cv2.namedWindow('image')
+    cv2.createTrackbar('R','image',0,2000,nothing)
 
     warnings.filterwarnings("ignore")
 
