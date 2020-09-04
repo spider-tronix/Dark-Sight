@@ -12,8 +12,8 @@ import numpy as np
 from pssh.clients.native.parallel import ParallelSSHClient
 import warnings
 
-op = Array("d", 24 * 32, lock=False)  # Global variable (shared memory between threads)
-
+op_thermal = Array("d", 24 * 32, lock=False)  # Global variable (shared memory between threads)
+# op_picam = Array("d",)
 
 class Netcat:
     """ Python 'netcat like' module """
@@ -120,7 +120,7 @@ def arr2heatmap(arr):
 
 
 def thermal_process():
-    global op
+    global op_thermal
     nc = Netcat("192.168.0.104", 1234)
     cam = ThermalCamera()
     cam.trigger_camera()
@@ -132,28 +132,33 @@ def thermal_process():
         try:
             data = nc.read_until("End")
             data = data[data.find("Subpage:") + 11 : -4]
-            op[:] = list(np.concatenate(stdout2arr(data)))
+            op_thermal[:] = list(np.concatenate(stdout2arr(data)))
             # print(op)
         except Exception as e:
             cam.revive_cam()
             print(e)
 
+# def picam_process():
+#     global 
+
 def denoise_array(image):
 
-    op = gaussian_filter(image, sigma=float(cv2.getTrackbarPos('R','image')/200))
+    # op = gaussian_filter(image, sigma=float(cv2.getTrackbarPos('R','image')/200))
+    op = gaussian_filter(image, sigma=7.39)
+
     return op
     
 def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filter=True):
 
     Readings = collections.namedtuple("Readings", ["thermal", "normal"])
 
-    thermal_readings = np.reshape(op[:], (-1, 32))
     normal_img = picam()
+    thermal_readings = np.reshape(op_thermal[:], (-1, 32))
 
-    if apply_filter:
-        thermal_readings = denoise_array(thermal_readings)
 
     vis = cv2.resize(thermal_readings, (thermalimg_op_size[0], thermalimg_op_size[1]))
+    if apply_filter:
+        vis = denoise_array(vis)
     heatmap = arr2heatmap(vis)
 
     if thermal_op_type == "img":
