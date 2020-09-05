@@ -152,15 +152,15 @@ def denoise_array(image, mask_offset=(20, 20, 20, 20)):
 
     masked_data = np.array(image[x1:x2, y1:y2], copy =True)
 
-    image[x1:x2, y1:y2] = np.zeros(masked_data.shape)  # Create mask
+    image[:] = (np.sum(image) - np.sum(masked_data))/(image.size - masked_data.size)  # Average of borders 
 
     # op = gaussian_filter(image, sigma=7.39)
-    op = gaussian_filter(image, sigma=float(cv2.getTrackbarPos("R", "Trackbar") / 200))  # Apply filter
+    # op = gaussian_filter(image, sigma=float(cv2.getTrackbarPos("R", "Trackbar") / 200))  # Apply filter
     # op = 
 
-    op[x1:x2, y1:y2] = masked_data  # Put the data Back
+    image[x1:x2, y1:y2] = masked_data  # Put the data Back
 
-    return op
+    return image
 
 
 def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filter=True):
