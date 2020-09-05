@@ -12,8 +12,11 @@ import numpy as np
 from pssh.clients.native.parallel import ParallelSSHClient
 import warnings
 
-op_thermal = Array("d", 24 * 32, lock=False)  # Global variable (shared memory between threads)
+op_thermal = Array(
+    "d", 24 * 32, lock=False
+)  # Global variable (shared memory between threads)
 # op_picam = Array("d",)
+
 
 class Netcat:
     """ Python 'netcat like' module """
@@ -138,23 +141,34 @@ def thermal_process():
             cam.revive_cam()
             print(e)
 
-# def picam_process():
-#     global 
 
-def denoise_array(image):
+def denoise_array(image, mask_offset=(20, 20, 20, 20)):
 
-    # op = gaussian_filter(image, sigma=float(cv2.getTrackbarPos('R','image')/200))
-    op = gaussian_filter(image, sigma=7.39)
+    shape = image.shape
+    x1 = mask_offset[0]
+    x2 = shape[0] - mask_offset[1]
+    y1 = mask_offset[2]
+    y2 = shape[1] - mask_offset[3]
+
+    masked_data = np.array(image[x1:x2, y1:y2], copy =True)
+
+    image[x1:x2, y1:y2] = np.zeros(masked_data.shape)  # Create mask
+
+    # op = gaussian_filter(image, sigma=7.39)
+    op = gaussian_filter(image, sigma=float(cv2.getTrackbarPos("R", "Trackbar") / 200))  # Apply filter
+    # op = 
+
+    op[x1:x2, y1:y2] = masked_data  # Put the data Back
 
     return op
-    
+
+
 def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filter=True):
 
     Readings = collections.namedtuple("Readings", ["thermal", "normal"])
 
     normal_img = picam()
     thermal_readings = np.reshape(op_thermal[:], (-1, 32))
-
 
     vis = cv2.resize(thermal_readings, (thermalimg_op_size[0], thermalimg_op_size[1]))
     if apply_filter:
@@ -184,12 +198,15 @@ def main():
     picam.release()
     cv2.destroyAllWindows()
     p.terminate()
+
+
 def nothing(nil):
     pass
 
+
 if __name__ == "__main__":
-    cv2.namedWindow('image')
-    cv2.createTrackbar('R','image',0,2000,nothing)
+    cv2.namedWindow("Trackbar")
+    cv2.createTrackbar("R", "Trackbar", 0, 2000, nothing)
 
     warnings.filterwarnings("ignore")
 
