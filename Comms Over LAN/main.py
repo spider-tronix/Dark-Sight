@@ -6,6 +6,7 @@ from picam_client import PiCamera
 import socket
 import time
 
+import matplotlib.pyplot as plt
 from cv2 import cv2
 import collections
 import numpy as np
@@ -114,13 +115,11 @@ def print_arr(arr):
 
 
 def arr2heatmap(arr):
-    # print_arr(arr)
-    heatmap = cv2.normalize(
-        arr, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U
-    )
-    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-    return heatmap
 
+    # ax = cv2.applyColorMap( (arr * cv2.getTrackbarPos("Scale", "Trackbar")/122).astype('uint8'), cv2.COLORMAP_JET)
+    ax = cv2.applyColorMap( (arr * 2.245).astype('uint8'), cv2.COLORMAP_JET)
+
+    return ax
 
 def thermal_process():
     global op_thermal
@@ -138,8 +137,9 @@ def thermal_process():
             op_thermal[:] = list(np.concatenate(stdout2arr(data)))
             # print(op)
         except Exception as e:
-            cam.revive_cam()
+            #cam.revive_cam()
             print(e)
+            print("Consider restarting PI!!!!!")
 
 
 def denoise_array(image, mask_offset=(20, 20, 20, 20)):
@@ -150,20 +150,22 @@ def denoise_array(image, mask_offset=(20, 20, 20, 20)):
     y1 = mask_offset[2]
     y2 = shape[1] - mask_offset[3]
 
-    masked_data = np.array(image[x1:x2, y1:y2], copy =True)
+    masked_data = np.array(image[x1:x2, y1:y2], copy=True)
 
-    image[:] = (np.sum(image) - np.sum(masked_data))/(image.size - masked_data.size)  # Average of borders 
+    # image[x1:x2, y1:y2] = np.zeros(masked_data.shape)  # Create mask
 
     # op = gaussian_filter(image, sigma=7.39)
-    # op = gaussian_filter(image, sigma=float(cv2.getTrackbarPos("R", "Trackbar") / 200))  # Apply filter
-    # op = 
+    op = gaussian_filter(
+        image, sigma=float(cv2.getTrackbarPos("R", "Trackbar") / 200)
+    )  # Apply filter
+    # op =
 
-    image[x1:x2, y1:y2] = masked_data  # Put the data Back
+    op[x1:x2, y1:y2] = masked_data  # Put the data Back
 
-    return image
+    return op
 
 
-def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filter=True):
+def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filter=False):
 
     Readings = collections.namedtuple("Readings", ["thermal", "normal"])
 
@@ -207,6 +209,9 @@ def nothing(nil):
 if __name__ == "__main__":
     cv2.namedWindow("Trackbar")
     cv2.createTrackbar("R", "Trackbar", 0, 2000, nothing)
+    cv2.createTrackbar("Scale", "Trackbar", 21, 500, nothing)
+    cv2.createTrackbar("offset", "Trackbar", 21, 255, nothing)
+
 
     warnings.filterwarnings("ignore")
 
