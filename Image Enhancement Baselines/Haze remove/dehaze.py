@@ -80,8 +80,8 @@ def Recover(im, t, A, tx=0.1):
 
 
 def dehaze_from_file(
-    src_path="/media/sudhar/D Drive/Spider/Dark-sight/Dark-Sight/Image Enhancement Baselines/inv.jpg",
-    op_path="/media/sudhar/D Drive/Spider/Dark-sight/Dark-Sight/Image Enhancement Baselines/Haze remove/img/J.jpg",
+    src_path="./img/inv.jpg",
+    op_path="./img/J.jpg",
 ):
     src = cv2.imread(src_path)
 
