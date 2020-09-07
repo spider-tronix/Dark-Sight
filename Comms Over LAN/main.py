@@ -1,61 +1,49 @@
-import base64
+from multiprocessing import Process, Array
+
+from picam_client import PiCamera
+
 import socket
 import time
 
-import cv2
+from cv2 import cv2
+import collections
 import numpy as np
-import paramiko
-import ray
-import zmq
+from pssh.clients.native.parallel import ParallelSSHClient
+import warnings
 
-ray.init()
-
-
-@ray.remote
-class PiCam:
-    def __init__(self):
-        context = zmq.Context()
-        self.footage_socket = context.socket(zmq.SUB)
-        self.footage_socket.bind('tcp://*:5555')
-        self.footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
-
-    def recv(self):
-        frame = self.footage_socket.recv_string()
-        img = base64.b64decode(frame)
-        npimg = np.fromstring(img, dtype=np.uint8)
-        source = cv2.imdecode(npimg, 1)
-        return source
+op_thermal = Array(
+    "d", 24 * 32, lock=False
+)  # Global variable (shared memory between threads)
 
 
 class Netcat:
     """ Python 'netcat like' module """
-    socket_args = {'family': socket.AF_INET,
-                   'type': socket.SOCK_STREAM}
 
     def __init__(self, ip, port):
         self.buff = ""
-        # self.socket = socket.socket(**self.socket_args)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((ip, port))
         self.conn = None
+        self.start = "Subpage"
 
     def listen(self):
-        self.socket.listen(2)
+
+        self.socket.listen(1)
         self.conn, addr = self.socket.accept()
 
     def read(self, length=1024):
         """ Read 1024 bytes off the socket """
-        return self.conn.recv(length)
+        return self.conn.recv(length).decode("ascii")
 
     def read_until(self, data):
         """ Read data into the buffer until we have data """
+        # self.buff = ""
         while data not in self.buff:
-            self.buff += self.conn.recv(1024).decode('ascii')
+            self.buff += self.conn.recv(1024).decode("ascii")
 
         pos = self.buff.find(data)
-        rval = self.buff[:pos + len(data)]
-        self.buff = self.buff[pos + len(data):]
+        rval = self.buff[: pos + len(data)]
+        self.buff = self.buff[pos + len(data) :]
 
         return rval
 
@@ -64,29 +52,50 @@ class Netcat:
 
     def close(self):
         self.socket.close()
-        self.conn.close()
 
 
-def custom_serializer(obj):
-    obj.close()
-    return obj.socket_args
+class ThermalCamera:
+    def __init__(self):
+        self.port = "22"
+        self.uname = "pi"
+        self.passd = "ni6ga2rd"
+        self.ip = "192.168.0.109"
+        self.pi_ssh = ParallelSSHClient(
+            hosts=[self.ip], user=self.uname, password=self.passd
+        )
+        self.connect_ssh()
 
+    def connect_ssh(self):
+        # self.pi_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # self.pi_ssh.connect(hostname=self.ip, username=self.uname, password=self.passd)
+        pass
 
-def custom_deserializer(value):
-    obj = Netcat('192.168.43.156', 2000)
-    obj.listen()
-    return obj
+    def trigger_camera(self):
+        # _, _, err = self.pi_ssh.exec_command(
+        #     'tmux attach-session -d "~/test | nc 192.168.43.156 2000"', get_pty=True)
+        # _, _, err = self.pi_ssh.exec_command('tmux send -t one "~/test | nc 192.168.43.156 2000" ENTER', get_pty=True)
+        # _, _, err = self.pi_ssh.exec_command('tmux send -t two "timeout 4 ~/bin/fbuf" ENTER', get_pty=True)
+        # _ = self.pi_ssh.exec_command('tmux new-session -d "timeout 4 ~/bin/fbuf"')
 
+        self.pi_ssh.run_command(command='tmux new-session -d "~/test_new"')
+        self.pi_ssh.run_command(
+            command='tmux new-session -d "bash ~/Desktop/Script/ds_startup.sh"'
+        )
 
-ray.register_custom_serializer(
-    Netcat, serializer=custom_serializer, deserializer=custom_deserializer)
+        # self.revive_cam()
+        # err = err.readlines()
+        # print(f"Errors on cmd : {''.join(err)}")
+
+    def revive_cam(self):
+        # self.pi_ssh.run_command('tmux new-session -d "timeout 3 fbuf"')
+        self.pi_ssh.run_command('tmux new-session -d "fbuf"')
 
 
 def stdout2arr(string):
-    tem_row = list(string.strip().split('\n'))
+    tem_row = list(string.strip().split("\n"))
     temp = []
     for col in tem_row:
-        temp.append(list(map(float, col.strip().split(' '))))
+        temp.append(list(map(float, col.strip().split(" "))))
     temp = np.array(temp, dtype=np.float32)
 
     # temp = np.flipud(temp)
@@ -95,102 +104,88 @@ def stdout2arr(string):
     return temp
 
 
+def print_arr(arr):
+    for row in arr:
+        for val in row:
+            print("{:4}".format(val))
+        print()
+
+
 def arr2heatmap(arr):
-    heatmap = cv2.normalize(arr, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-    return heatmap
 
+    # ax = cv2.applyColorMap( (arr * cv2.getTrackbarPos("Scale", "Trackbar")/122).astype('uint8'), cv2.COLORMAP_JET)
+    ax = cv2.applyColorMap( (arr * 2.245).astype('uint8'), cv2.COLORMAP_JET)
 
-# @ray.remote
-class SSHPi:
-    def __init__(self):
-        self.port = '22'
-        self.uname = 'pi'
-        self.passd = 'sharan'
-        self.ip = '192.168.43.38'
-        # self.pi_ssh = ParallelSSHClient(hosts=[self.ip], user=self.uname, password=self.passd)
-        self.pi_ssh = paramiko.SSHClient()
-        self.connect_ssh()
+    return ax
 
-    def connect_ssh(self):
-        self.pi_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.pi_ssh.connect(hostname=self.ip, username=self.uname, password=self.passd)
-
-    def trigger_thermal_camera(self):
-        self.pi_ssh.exec_command(
-            command='tmux new-session -d " ~/test | (while true; do (nc 192.168.43.156 2000); done) "')
-        # self.pi_ssh.exec_command(command='tmux new-session -d "~/test | nc 192.168.43.156 2000"')
-        # self.pi_ssh.run_command(command='while true; do (~/test | nc 192.168.43.156 2000); done')
-        # _, _, err = self.pi_ssh.exec_command(
-        #     command='tmux send -t 0 "while true; do (~/test | nc 192.168.43.156 2000); done" ENTER',
-        #     get_pty=True)
-        # print(f"Errors : {err.readlines()}")
-        print("Thermal camera is Live!")
-
-    def trigger_pi_camera(self):
-        self.pi_ssh.exec_command(
-            command=r'tmux new-session -d '
-                    r'"~/env/bin/python3 Dark-Sight/Comms\ Over\ LAN/Video\ Capture\ Over\ TCP/server.py"')
-        print("PiCam is Live!")
-
-    def tmux_kill(self):
-        self.pi_ssh.exec_command(
-            command=r'tmux kill-server')
-        print("Tmux server killed :(")
-
-
-@ray.remote
-def read_proc_thermal(nc):
-    tick = time.time()
-
-    data = nc.read_until('End')
-    print(f"Data : {data}")
-    data = data[data.find('Subpage:') + 11:-4]
-    proc = stdout2arr(data)
-
-    tock = time.time()
-    print(-(tick - tock))
-
-    vis = cv2.resize(proc, (960, 720))
-    heatmap = arr2heatmap(vis)
-    return heatmap
-
-
-def main():
-    # picam_recv = PiCam.remote()
-    sshpi = SSHPi()
-    nc = Netcat('192.168.43.156', 2000)
-
-    # sshpi.trigger_pi_camera()
-    sshpi.trigger_thermal_camera()
-
+def thermal_process():
+    global op_thermal
+    nc = Netcat("192.168.0.104", 1234)
+    cam = ThermalCamera()
+    cam.trigger_camera()
     nc.listen()
-    one = nc.read_until('End')
-    print(one)
-    nc.socket.close()
-    thermal = 'MLX90640 Feed'
-    # cam = 'PiCam Feed'
-    cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
+
+    _ = nc.read_until("End")
 
     while True:
         try:
-            # img = picam_recv.recv.remote()
-            heatmap = read_proc_thermal.remote(nc)
-            # img, heatmap = ray.get([img, heatmap])
-            # img = ray.get(img)
-            heatmap = ray.get(heatmap)
-            cv2.imshow(thermal, heatmap)
-            # cv2.imshow(cam, img)
-            ch = cv2.waitKey(1)
-            if ch == ord('q'):
-                break
-
+            data = nc.read_until("End")
+            data = data[data.find("Subpage:") + 11 : -4]
+            op_thermal[:] = list(np.concatenate(stdout2arr(data)))
+            # print(op)
         except Exception as e:
+            #cam.revive_cam()
             print(e)
+            print("Consider restarting PI!!!!!")
 
+
+def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32)):
+
+    Readings = collections.namedtuple("Readings", ["thermal", "normal"])
+
+    normal_img = picam()
+    thermal_readings = np.reshape(op_thermal[:], (-1, 32))
+
+    vis = cv2.resize(thermal_readings, (thermalimg_op_size[0], thermalimg_op_size[1]))
+    heatmap = arr2heatmap(vis)
+
+    if thermal_op_type == "img":
+        reading = Readings(heatmap, normal_img)
+    else:
+        reading = Readings(thermal_readings, normal_img)
+
+    return reading
+
+
+def main():
+
+    while True:
+        reading = read_sensors(thermalimg_op_size=(480, 360))
+
+        cv2.imshow("thermal", reading.thermal)
+        cv2.imshow("Normal", reading.normal)
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            print("Exiting...")
+            break
+
+    picam.release()
     cv2.destroyAllWindows()
-    sshpi.tmux_kill()
+    p.terminate()
 
 
-if __name__ == '__main__':
+def nothing(nil):
+    pass
+
+
+if __name__ == "__main__":
+
+    warnings.filterwarnings("ignore")
+
+    p = Process(target=thermal_process)
+    p.start()
+
+    picam = PiCamera()
+
     main()
+
