@@ -1,12 +1,10 @@
 from multiprocessing import Process, Array
-from scipy.ndimage.filters import gaussian_filter
 
 from picam_client import PiCamera
 
 import socket
 import time
 
-import matplotlib.pyplot as plt
 from cv2 import cv2
 import collections
 import numpy as np
@@ -16,7 +14,6 @@ import warnings
 op_thermal = Array(
     "d", 24 * 32, lock=False
 )  # Global variable (shared memory between threads)
-# op_picam = Array("d",)
 
 
 class Netcat:
@@ -142,30 +139,7 @@ def thermal_process():
             print("Consider restarting PI!!!!!")
 
 
-def denoise_array(image, mask_offset=(20, 20, 20, 20)):
-
-    shape = image.shape
-    x1 = mask_offset[0]
-    x2 = shape[0] - mask_offset[1]
-    y1 = mask_offset[2]
-    y2 = shape[1] - mask_offset[3]
-
-    masked_data = np.array(image[x1:x2, y1:y2], copy=True)
-
-    # image[x1:x2, y1:y2] = np.zeros(masked_data.shape)  # Create mask
-
-    # op = gaussian_filter(image, sigma=7.39)
-    op = gaussian_filter(
-        image, sigma=float(cv2.getTrackbarPos("R", "Trackbar") / 200)
-    )  # Apply filter
-    # op =
-
-    op[x1:x2, y1:y2] = masked_data  # Put the data Back
-
-    return op
-
-
-def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filter=False):
+def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32)):
 
     Readings = collections.namedtuple("Readings", ["thermal", "normal"])
 
@@ -173,8 +147,6 @@ def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32), apply_filte
     thermal_readings = np.reshape(op_thermal[:], (-1, 32))
 
     vis = cv2.resize(thermal_readings, (thermalimg_op_size[0], thermalimg_op_size[1]))
-    if apply_filter:
-        vis = denoise_array(vis)
     heatmap = arr2heatmap(vis)
 
     if thermal_op_type == "img":
@@ -207,11 +179,6 @@ def nothing(nil):
 
 
 if __name__ == "__main__":
-    cv2.namedWindow("Trackbar")
-    cv2.createTrackbar("R", "Trackbar", 0, 2000, nothing)
-    cv2.createTrackbar("Scale", "Trackbar", 21, 500, nothing)
-    cv2.createTrackbar("offset", "Trackbar", 21, 255, nothing)
-
 
     warnings.filterwarnings("ignore")
 
