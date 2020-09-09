@@ -2,8 +2,24 @@ from cv2 import cv2
 import math
 import numpy as np
 
+import os
+import time
 
-def DarkChannel(im, sz):
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+
+def nothing(nil):
+    pass
+
+
+cv2.namedWindow("track")
+cv2.createTrackbar("sz1", "track", 15, 100, nothing)
+cv2.createTrackbar("omega", "track", 95, 200, nothing)
+cv2.createTrackbar("sz2", "track", 15, 100, nothing)
+cv2.createTrackbar("tx", "track", 10, 100, nothing)
+
+
+def DarkChannel(im, sz=cv2.getTrackbarPos("sz1", "track")):
     b, g, r = cv2.split(im)
     dc = cv2.min(cv2.min(r, g), b)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (sz, sz))
@@ -29,8 +45,8 @@ def AtmLight(im, dark):
     return A
 
 
-def TransmissionEstimate(im, A, sz):
-    omega = 0.95
+def TransmissionEstimate(im, A, sz=cv2.getTrackbarPos("sz2", "track")):
+    omega = cv2.getTrackbarPos("omega", "track") / 100
     im3 = np.empty(im.shape, im.dtype)
 
     for ind in range(0, 3):
@@ -69,7 +85,7 @@ def TransmissionRefine(im, et):
     return t
 
 
-def Recover(im, t, A, tx=0.1):
+def Recover(im, t, A, tx=cv2.getTrackbarPos("tx", "track") / 100):
     res = np.empty(im.shape, im.dtype)
     t = cv2.max(t, tx)
 
@@ -80,8 +96,8 @@ def Recover(im, t, A, tx=0.1):
 
 
 def dehaze_from_file(
-    src_path="./img/inv.jpg",
-    op_path="./img/J.jpg",
+    src_path=os.path.join(dir_path, "img/inv.jpg"),
+    op_path=os.path.join(dir_path, "img/J.jpg"),
 ):
     src = cv2.imread(src_path)
 
@@ -93,7 +109,35 @@ def dehaze_from_file(
     t = TransmissionRefine(src, te)
     J = Recover(I, t, A, 0.1)
 
-    cv2.imwrite(op_path,J * 255,)
+    cv2.imwrite(
+        op_path,
+        J * 255,
+    )
+
+
+def dehaze(src):
+    I = src.astype("float32") / 255
+
+    while 1:
+        tock = time.time()
+        dark = DarkChannel(I)
+        A = AtmLight(I, dark)
+        te = TransmissionEstimate(I, A)
+        t = TransmissionRefine(src, te)
+        J = Recover(I, t, A)
+        deh = J * 255
+        cv2.imshow("Dehazed", deh)
+        op = (1 - J) * 255
+        tick = time.time()
+        print(1 / (tick - tock))
+        # op = np.array(op,dtype= np.uint8)
+        cv2.imshow("op", op)
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            cv2.imwrite(os.path.join(dir_path, "img/J.jpg"), op)
+            cv2.imshow("Final", cv2.imread(os.path.join(dir_path, "img/J.jpg")))
+            cv2.waitKey(0)
+            break
 
 
 if __name__ == "__main__":
@@ -102,27 +146,25 @@ if __name__ == "__main__":
     try:
         fn = sys.argv[1]
     except:
-        fn = "/media/sudhar/D Drive/Spider/Dark-sight/Dark-Sight/Image Enhancement Baselines/inv.jpg"
-
-    def nothing(*argv):
-        pass
+        fn = os.path.join(dir_path, "img/inv.jpg")
 
     src = cv2.imread(fn)
-
-    I = src.astype("float64") / 255
-
-    dark = DarkChannel(I, 15)
-    A = AtmLight(I, dark)
-    te = TransmissionEstimate(I, A, 15)
-    t = TransmissionRefine(src, te)
-    J = Recover(I, t, A, 0.1)
+    src = cv2.resize(src, (480, 360))
+    dehaze(src)
+    # I = src.astype("float64") / 255
+    #
+    # dark = DarkChannel(I, 15)
+    # A = AtmLight(I, dark)
+    # te = TransmissionEstimate(I, A, 15)
+    # t = TransmissionRefine(src, te)
+    # J = Recover(I, t, A, 0.1)
 
     # cv2.imshow("dark",dark)
     # cv2.imshow("t",t)
     # cv2.imshow('I',src)
     # cv2.imshow('J',J)
-    cv2.imwrite(
-        "/media/sudhar/D Drive/Spider/Dark-sight/Dark-Sight/Image Enhancement Baselines/Haze remove/img/J.jpg",
-        J * 255,
-    )
+    # cv2.imwrite(
+    #     "/media/sudhar/D Drive/Spider/Dark-sight/Dark-Sight/Image Enhancement Baselines/Haze remove/img/J.jpg",
+    #     J * 255,
+    # )
     # cv2.waitKey()
