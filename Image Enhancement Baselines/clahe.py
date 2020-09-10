@@ -3,7 +3,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 
-current_dir = "/media/sudhar/D Drive/Spider/Dark-sight/Dark-Sight/Image Enhancement Baselines/Haze remove"
+current_dir = (
+    "/media/sudhar/D Drive/Spider/Dark-sight/Dark-Sight/Image Enhancement Baselines"
+)
 
 
 def nothing(sdg):
@@ -12,7 +14,7 @@ def nothing(sdg):
 
 def clahe_tune(img):
     """
-    Apply CLACHE algorithm to image
+    Apply CLACHE algorithm to image with trackbars to tune
     :param img: Input image of RGB format
     :output: filtered image
     """
