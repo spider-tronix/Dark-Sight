@@ -5,6 +5,7 @@ from clahe import clahe
 
 import socket
 from time import time
+import os
 
 from cv2 import cv2
 import collections
@@ -168,19 +169,28 @@ def main():
         cv2.imshow("Thermal", reading.thermal)
         cv2.imshow("Normal", reading.normal)
 
-        # Processing the camera readings 
-        op = clahe(reading.normal)  
-        cv2.imshow('Output',op)
+        # Processing the camera readings
+        op = clahe(reading.normal)
+        cv2.imshow("Output", op)
+
+        hsvImg = cv2.cvtColor(reading.normal, cv2.COLOR_BGR2HSV)
+        # decreasing the V channel by a factor from the original
+        hsvImg[..., 2] = hsvImg[..., 2] * 0.2
+        cv2.imshow("Darker Input", cv2.cvtColor(hsvImg, cv2.COLOR_HSV2RGB))
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             print("Exiting...")
-            cv2.imwrite("Thermal image.jpg", reading.thermal)
-            cv2.imwrite("Normal image.jpg", reading.normal)
-            cv2.imwrite('Output image.jpg',op)
+            output_path = os.path.dirname(__file__)
+            cv2.imwrite(os.path.join(output_path, "Thermal image.jpg"), reading.thermal)
+            cv2.imwrite(os.path.join(output_path, "Normal image.jpg"), reading.normal)
+            cv2.imwrite(os.path.join(output_path, "Output image.jpg"), op)
+            cv2.imwrite(
+                os.path.join(output_path, "Darker Normal image.jpg"),
+                cv2.cvtColor(hsvImg, cv2.COLOR_HSV2RGB),
+            )
             break
         tock = time()
-        print("FPS: ", 1/(tock - tick))
-
+        print("FPS: ", 1 / (tock - tick))
 
     picam.release()
     cv2.destroyAllWindows()
