@@ -1,9 +1,10 @@
 from multiprocessing import Process, Array
 
 from picam_client import PiCamera
+from clahe import clahe
 
 import socket
-import time
+from time import time
 
 from cv2 import cv2
 import collections
@@ -29,7 +30,7 @@ class Netcat:
     def listen(self):
 
         self.socket.listen(1)
-        self.conn, addr = self.socket.accept()
+        self.conn, _ = self.socket.accept()
 
     def read(self, length=1024):
         """ Read 1024 bytes off the socket """
@@ -114,9 +115,10 @@ def print_arr(arr):
 def arr2heatmap(arr):
 
     # ax = cv2.applyColorMap( (arr * cv2.getTrackbarPos("Scale", "Trackbar")/122).astype('uint8'), cv2.COLORMAP_JET)
-    ax = cv2.applyColorMap( (arr * 2.245).astype('uint8'), cv2.COLORMAP_JET)
+    ax = cv2.applyColorMap((arr * 2.245).astype("uint8"), cv2.COLORMAP_JET)
 
     return ax
+
 
 def thermal_process():
     global op_thermal
@@ -134,7 +136,7 @@ def thermal_process():
             op_thermal[:] = list(np.concatenate(stdout2arr(data)))
             # print(op)
         except Exception as e:
-            #cam.revive_cam()
+            # cam.revive_cam()
             print(e)
             print("Consider restarting PI!!!!!")
 
@@ -160,16 +162,25 @@ def read_sensors(thermal_op_type="img", thermalimg_op_size=(24, 32)):
 def main():
 
     while True:
+        tick = time()
         reading = read_sensors(thermalimg_op_size=(480, 360))
 
-        cv2.imshow("thermal", reading.thermal)
+        cv2.imshow("Thermal", reading.thermal)
         cv2.imshow("Normal", reading.normal)
+
+        # Processing the camera readings 
+        op = clahe(reading.normal)  
+        cv2.imshow('Output',op)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             print("Exiting...")
             cv2.imwrite("Thermal image.jpg", reading.thermal)
             cv2.imwrite("Normal image.jpg", reading.normal)
+            cv2.imwrite('Output image.jpg',op)
             break
+        tock = time()
+        print("FPS: ", 1/(tock - tick))
+
 
     picam.release()
     cv2.destroyAllWindows()
@@ -190,4 +201,3 @@ if __name__ == "__main__":
     picam = PiCamera()
 
     main()
-
