@@ -120,7 +120,7 @@ def arr2heatmap(arr):
 
 def thermal_process():
     global op_thermal
-    nc = Netcat("192.168.0.104", 1234)
+    nc = Netcat("192.168.0.107", 1234)
     cam = ThermalCamera()
     cam.trigger_camera()
     nc.listen()
@@ -167,6 +167,8 @@ def main():
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             print("Exiting...")
+            cv2.imwrite("Thermal image.jpg", reading.thermal)
+            cv2.imwrite("Normal image.jpg", reading.normal)
             break
 
     picam.release()

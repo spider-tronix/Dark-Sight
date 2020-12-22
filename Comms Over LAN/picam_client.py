@@ -5,8 +5,8 @@ class PiCamera:
     def __init__(self):
 
         print("Connecting to PI cam...")
-        self.cap = cv2.VideoCapture("udp://192.168.0.104:1234", cv2.CAP_FFMPEG)
-
+        self.cap = cv2.VideoCapture("udp://192.168.0.107:1234", cv2.CAP_FFMPEG)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while not self.cap.isOpened():
             cv2.waitKey(10)
 
