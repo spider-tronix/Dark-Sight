@@ -1,7 +1,8 @@
+""" NOT USED """
 import socket
 import time
 
-import cv2
+from cv2 import cv2
 import numpy as np
 from pssh.clients.native.parallel import ParallelSSHClient
 
@@ -45,8 +46,8 @@ class ThermalCamera:
     def __init__(self):
         self.port = '22'
         self.uname = 'pi'
-        self.passd = 'sharan'
-        self.ip = '192.168.43.38'
+        self.passd = 'ni6ga2rd'
+        self.ip = '192.168.0.109'
         self.pi_ssh = ParallelSSHClient(hosts=[self.ip], user=self.uname, password=self.passd)
         self.connect_ssh()
 
@@ -62,7 +63,7 @@ class ThermalCamera:
         # _, _, err = self.pi_ssh.exec_command('tmux send -t two "timeout 4 ~/bin/fbuf" ENTER', get_pty=True)
         # _ = self.pi_ssh.exec_command('tmux new-session -d "timeout 4 ~/bin/fbuf"')
 
-        self.pi_ssh.run_command(command='tmux new-session -d "~/test | nc 192.168.43.156 2000"')
+        self.pi_ssh.run_command(command='tmux new-session -d "~/test | nc 192.168.0.104 2000"')
 
         # self.revive_cam()
         # err = err.readlines()
@@ -91,9 +92,24 @@ def arr2heatmap(arr):
     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
     return heatmap
 
+def read(op):
+    nc = Netcat('192.168.0.104', 1234)
+    cam = ThermalCamera()
+    cam.trigger_camera()
+
+    nc.listen()
+    _ = nc.read_until('End')
+
+    while True:
+        try:
+            data = nc.read_until('End')
+            data = data[data.find('Subpage:') + 11:-4]
+            op = stdout2arr(data)
+        except Exception as e:
+            print(e)
 
 def main():
-    nc = Netcat('192.168.43.156', 2000)
+    nc = Netcat('192.168.0.104', 2000)
     cam = ThermalCamera()
     cam.trigger_camera()
 
