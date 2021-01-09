@@ -1,4 +1,4 @@
-#OM NAMO NARAYANA
+# OM NAMO NARAYANA
 
 # uniform content loss + adaptive threshold + per_class_input + recursive G
 # improvement upon cqf37
@@ -23,7 +23,6 @@
 
 # ps = 512  # patch size for training
 # save_freq = 500
-
 
 
 # def lrelu(x):
@@ -216,21 +215,27 @@ from skimage import io, transform
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from PIL import Image, ImageOps
+from torch.nn import ReplicationPad2d
 
 # Ignore warnings
 import warnings
+
+from torchvision.transforms.functional import pil_to_tensor
 warnings.filterwarnings("ignore")
 
-long_shots_dir = './dataset/dataset/'
+# long_shots_dir = './dataset/dataset/' #Arvinth
+long_shots_dir = '../dataset/'  # Harshit
+
 long_shot_cam = glob.glob(long_shots_dir+'**/*long*.CR3', recursive=True)
 short_shot_cam = glob.glob(long_shots_dir+'**/*short*.CR3', recursive=True)
 therm = glob.glob(long_shots_dir+'**/temp.jpg', recursive=True)
 
 
-def pack_raw(raw, blevel = 512):
+def pack_raw(raw, blevel=512):
     # pack Bayer image to 4 channels
     im = raw.raw_image_visible.astype(np.float32)
-    im = np.maximum(im - blevel, 0) / (16383 - blevel)  # subtract the black level
+    # subtract the black level
+    im = np.maximum(im - blevel, 0) / (16383 - blevel)
 
     im = np.expand_dims(im, axis=2)
     img_shape = im.shape
@@ -243,6 +248,7 @@ def pack_raw(raw, blevel = 512):
                           im[1:H:2, 0:W:2, :]), axis=2)
     return out
 
+
 class DarkSightDataset(Dataset):
     """DarkSight dataset."""
 
@@ -254,11 +260,15 @@ class DarkSightDataset(Dataset):
                 on a sample.
         """
         self.root_dir = root_dir
-        self.long_exp_list = glob.glob(root_dir+'**/*long*.CR3', recursive=True)
-        self.short_exp_list = glob.glob(long_shots_dir+'**/*short*.CR3', recursive=True)
-        self.therm_list = glob.glob(long_shots_dir+'**/temp.jpg', recursive=True)
+        self.long_exp_list = glob.glob(
+            root_dir+'**/*long*.CR3', recursive=True)
+        self.short_exp_list = glob.glob(
+            long_shots_dir+'**/*short*.CR3', recursive=True)
+        self.therm_list = glob.glob(
+            long_shots_dir+'**/temp.jpg', recursive=True)
         self.transform = transform
-        assert(len(self.long_exp_list) == len(self.short_exp_list) and len(self.long_exp_list) == len(self.therm_list))
+        assert(len(self.long_exp_list) == len(self.short_exp_list)
+               and len(self.long_exp_list) == len(self.therm_list))
 
     def __len__(self):
         return len(self.long_exp_list)
@@ -270,61 +280,89 @@ class DarkSightDataset(Dataset):
         short_exp = rawpy.imread(self.short_exp_list[idx])
         therm = Image.open(self.therm_list[idx])
         therm = ImageOps.grayscale(therm)
-        sample = {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
+        sample = {'long_exposure': long_exp,
+                  'short_exposure': short_exp, 'thermal_response': therm}
 
         if self.transform:
             sample = self.transform(sample)
 
         return sample
+
+
 class PreprocessRaw(object):
     def __call__(self, sample):
-        long_exp, short_exp, therm= sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
-        long_exp = long_exp.postprocess(use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16)
-        long_exp = np.float32(long_exp/ 65535.0)
-        short_exp = pack_raw(short_exp)    
+        long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+        long_exp = long_exp.postprocess(
+            use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16)
+        long_exp = np.float32(long_exp / 65535.0)
+        short_exp = pack_raw(short_exp)
         return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
+
 
 class MatchSize(object):
 
     def __init__(self, cam_shape, therm_shape):
-        self.ratio = min(cam_shape[0]/therm_shape[1], cam_shape[1]/therm_shape[0])
-        self.therm_shape = (int(therm_shape[0]*self.ratio), int(therm_shape[1]*self.ratio))
+        self.ratio = min(cam_shape[0]/therm_shape[1],
+                         cam_shape[1]/therm_shape[0])
+        self.therm_shape = (
+            int(therm_shape[0]*self.ratio), int(therm_shape[1]*self.ratio))
         lpad = int((cam_shape[0] - self.therm_shape[1])/2)
         rpad = cam_shape[0] - lpad - self.therm_shape[1]
         upad = int((cam_shape[1] - self.therm_shape[0])/2)
         dpad = cam_shape[1] - upad - self.therm_shape[0]
-        self.padding = ( upad, lpad, dpad, rpad)
+        # self.padding = (upad, lpad, dpad, rpad) #for ImageOps.expand
+        self.padding = (upad, dpad, lpad, rpad)  # for RepllicationPad2d
         self.shape = cam_shape
 
-
     def __call__(self, sample):
-        long_exp, short_exp, therm= sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+        long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
         therm = therm.resize(self.therm_shape)
-        therm = ImageOps.expand(therm, self.padding)
+        # therm = ImageOps.expand(therm, self.padding)
+        print(self.padding)
+        m = ReplicationPad2d(self.padding)
+        therm_tensor = transforms.ToTensor()(therm).unsqueeze_(0)
+        therm_tensor = m(therm_tensor)
+        therm = transforms.ToPILImage()(therm_tensor.squeeze_(0))
         return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
 
+
 class RandomCrop(object):
-    def __init__(self, ps = 512, hbuf = 550, wbuf = 550):
-        self.ps = ps#patch size
+    def __init__(self, ps=512, hbuf=550, wbuf=550):
+        self.ps = ps  # patch size
         self.hbuf = hbuf
         self.wbuf = wbuf
 
     def __call__(self, sample):
-        long_exp, short_exp, therm= sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
-        W = short_exp.shape[1]
-        H = short_exp.shape[0]
-        ps = self.ps
-        xx = np.random.randint(self.wbuf, W - ps - self.wbuf)
-        yy = np.random.randint(self.hbuf, H - ps - self.hbuf)
-        short_exp = short_exp[yy:yy + ps, xx:xx + ps, :]
-        therm = therm.crop((xx,yy, xx+ps,yy + ps))
-        long_exp = long_exp[yy * 2:yy * 2 + ps * 2, xx * 2:xx * 2 + ps * 2, :]
+        iter_times = 0
+        while True:
+            iter_times += 1
+            long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+            W = short_exp.shape[1]
+            H = short_exp.shape[0]
+            ps = self.ps
+            xx = np.random.randint(self.wbuf, W - ps - self.wbuf)
+            yy = np.random.randint(self.hbuf, H - ps - self.hbuf)
+            short_exp = short_exp[yy:yy + ps, xx:xx + ps, :]
+            therm = therm.crop((xx, yy, xx+ps, yy + ps))
+            long_exp = long_exp[yy * 2:yy * 2 +
+                                ps * 2, xx * 2:xx * 2 + ps * 2, :]
+            cnt = 0
+            for i in range(0, 512):
+                for j in range(0, 512):
+                    r = long_exp[i][j][0]*255
+                    g = long_exp[i][j][1]*255
+                    b = long_exp[i][j][2]*255
+                    if r < 40 and g < 40 and b < 40:
+                        cnt += 1
+            print(cnt)
+            if cnt < ((512*512)/1.5) or iter_times > 10:
+                break
         return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
 
 
 class RandomFlip(object):
     def __call__(self, sample):
-        long_exp, short_exp, therm= sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+        long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
         therm = np.array(therm)
         if np.random.randint(2, size=1)[0] == 1:  # random flip
             short_exp = np.flip(short_exp/255.0, axis=0)
@@ -341,8 +379,7 @@ class RandomFlip(object):
         return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
 
 
-
-def my_transform(train = True, cam_shape = (2010, 3012), therm_shape = (32, 24)):
+def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
     transform = [PreprocessRaw()]
     transform.append(MatchSize(cam_shape, therm_shape))
     transform.append(RandomCrop())
@@ -351,15 +388,19 @@ def my_transform(train = True, cam_shape = (2010, 3012), therm_shape = (32, 24))
     return transform
 
 
-#drive code
-dataset_dir = './dataset/dataset/'
-transformed_dataset = DarkSightDataset(dataset_dir, transform=my_transform(True))
-data = [transformed_dataset[0], transformed_dataset[1]]
+# drive code
+dataset_dir = '../dataset/'
+transformed_dataset = DarkSightDataset(
+    dataset_dir, transform=my_transform(True))
+# data = [transformed_dataset[0], transformed_dataset[1]]
+data = list(transformed_dataset)
 
 
-#debugging
-print('dataset1: ', data[0]['short_exposure'].shape, data[0]['thermal_response'].shape)
-print('dataset2: ', data[1]['short_exposure'].shape, data[1]['thermal_response'].shape)
+# debugging
+print('dataset1: ', data[0]['short_exposure'].shape,
+      data[0]['thermal_response'].shape)
+# print('dataset2: ', data[1]['short_exposure'].shape,
+#       data[1]['thermal_response'].shape)
 # data[0]['thermal_response'].show()
 print(np.max(data[0]['long_exposure']))
 plt.figure()
@@ -367,7 +408,7 @@ plt.imshow(data[0]['long_exposure'])
 plt.figure()
 plt.imshow(data[0]['thermal_response'])
 plt.figure()
-plt.imshow(data[0]['short_exposure'][:,:,:3])
-print(data[0]['short_exposure'][:,:,1:4].shape)
+plt.imshow(data[0]['short_exposure'][:, :, :3])
+print(data[0]['short_exposure'][:, :, 1:4].shape)
 plt.show()
 print(data[0]['thermal_response'][0][20:30])
