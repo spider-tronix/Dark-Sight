@@ -223,12 +223,12 @@ import warnings
 from torchvision.transforms.functional import pil_to_tensor
 warnings.filterwarnings("ignore")
 
-# long_shots_dir = './dataset/dataset/' #Arvinth
-long_shots_dir = '../dataset/'  # Harshit
+long_shots_dir = './dataset/dataset/' #Arvinth
+# long_shots_dir = '../dataset/'  # Harshit
 
 long_shot_cam = glob.glob(long_shots_dir+'**/*long*.CR3', recursive=True)
 short_shot_cam = glob.glob(long_shots_dir+'**/*short*.CR3', recursive=True)
-therm = glob.glob(long_shots_dir+'**/temp.jpg', recursive=True)
+therm = glob.glob(long_shots_dir+'**/*temp.jpg', recursive=True)
 
 
 def pack_raw(raw, blevel=512):
@@ -263,9 +263,9 @@ class DarkSightDataset(Dataset):
         self.long_exp_list = glob.glob(
             root_dir+'**/*long*.CR3', recursive=True)
         self.short_exp_list = glob.glob(
-            long_shots_dir+'**/*short*.CR3', recursive=True)
+            root_dir+'**/*short*.CR3', recursive=True)
         self.therm_list = glob.glob(
-            long_shots_dir+'**/temp.jpg', recursive=True)
+            root_dir+'**/temp.jpg', recursive=True)
         self.transform = transform
         assert(len(self.long_exp_list) == len(self.short_exp_list)
                and len(self.long_exp_list) == len(self.therm_list))
@@ -332,7 +332,7 @@ class RandomCrop(object):
         self.hbuf = hbuf
         self.wbuf = wbuf
 
-    def __call__(self, sample):
+    def __call__(self, sample, color_percent=70):
         iter_times = 0
         while True:
             iter_times += 1
@@ -355,7 +355,9 @@ class RandomCrop(object):
                     if r < 40 and g < 40 and b < 40:
                         cnt += 1
             print(cnt)
-            if cnt < ((512*512)/1.5) or iter_times > 10:
+            #color_precent added
+            if cnt < ((512*512)*color_percent/100) or iter_times > 10:
+                print('resampling..iteration:{}'.format(iter_times))
                 break
         return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
 
@@ -389,7 +391,8 @@ def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
 
 
 # drive code
-dataset_dir = '../dataset/'
+dataset_dir = './dataset/dataset/' #ARVINTH
+# dataset_dir = './dataset/' HARSHITH 
 transformed_dataset = DarkSightDataset(
     dataset_dir, transform=my_transform(True))
 # data = [transformed_dataset[0], transformed_dataset[1]]
