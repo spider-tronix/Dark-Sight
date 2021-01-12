@@ -291,7 +291,7 @@ class DarkSightDataset(Dataset):
         if self.transform:
             sample = self.transform(sample)
 
-        return sample
+        return [torch.tensor(sample['input_sample'].copy()), torch.tensor(sample['output_sample'].copy())]
 
 
 class PreprocessRaw(object):
@@ -391,7 +391,7 @@ class ConcatTherm(object):
         input_sample = np.transpose(short_exp, (2, 0, 1))
         input_sample = np.append(input_sample, np.expand_dims(therm, axis=0) , axis = 0)
         print('input_sample.shape: ', input_sample.shape)
-        return {'input_sample': input_sample, 'output_sample:', long_exp}
+        return {'input_sample': input_sample, 'output_sample': long_exp}
 
 
 def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
@@ -437,6 +437,12 @@ print(data[0]['thermal_response'][0][20:30])
 
 '''tensor format'''
 model = sidUnet()
-data[0] = tf.convert_to_tensor(torch)
-out = model.forward(data[0])
-print(out.shape)
+# data[0] = torch.tensor(data[0])
+# print(data[0])
+# out = model.forward(data[0][0])
+# print(out.shape)
+
+dataloader = torch.utils.data.DataLoader(data, batch_size=4, shuffle=True)
+dataiter = iter(dataloader)
+inputs, outputs = dataiter.next()
+print(inputs, outputs)

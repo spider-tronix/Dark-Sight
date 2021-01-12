@@ -16,27 +16,37 @@ class sidUnet(nn.Module):
         super(sidUnet, self).__init__()
         self.conv1_1 = nn.Conv2d(5, 32, 3, padding=(1, 1))
         self.conv1_2 = nn.Conv2d(32, 32, 3, padding=(1, 1))
+
         self.conv2_1 = nn.Conv2d(32, 64, 3, padding=(1, 1))
         self.conv2_2 = nn.Conv2d(64, 64, 3, padding=(1, 1))
+
         self.conv3_1 = nn.Conv2d(64, 128, 3, padding=(1, 1))
         self.conv3_2 = nn.Conv2d(128, 128, 3, padding=(1, 1))
+
         self.conv4_1 = nn.Conv2d(128, 256, 3, padding=(1, 1))
         self.conv4_2 = nn.Conv2d(256, 256, 3, padding=(1, 1))
+
         self.conv5_1 = nn.Conv2d(256, 512, 3, padding=(1, 1))
         self.conv5_2 = nn.Conv2d(512, 512, 3, padding=(1, 1))
+        
         self.pool = nn.MaxPool2d(2)
+
         self.up_6 = nn.ConvTranspose2d(512, 256, 2, stride=(2, 2))
         self.conv6_1 = nn.Conv2d(512, 256, 3, padding=(1, 1))
         self.conv6_2 = nn.Conv2d(256, 256, 3, padding=(1, 1))
+
         self.up_7 = nn.ConvTranspose2d(256, 128, 2, stride=(2, 2))
         self.conv7_1 = nn.Conv2d(256, 128, 3, padding=(1, 1))
         self.conv7_2 = nn.Conv2d(128, 128, 3, padding=(1, 1))
+
         self.up_8 = nn.ConvTranspose2d(128, 64, 2, stride=(2, 2))
         self.conv8_1 = nn.Conv2d(128, 64, 3, padding=(1, 1))
         self.conv8_2 = nn.Conv2d(64, 64, 3, padding=(1, 1))
+
         self.up_9 = nn.ConvTranspose2d(64, 32, 2, stride=(2, 2))
         self.conv9_1 = nn.Conv2d(64, 32, 3, padding=(1, 1))
         self.conv9_2 = nn.Conv2d(32, 32, 3, padding=(1, 1))
+        
         self.conv10 = nn.Conv2d(32, 12, 3, padding=(1, 1))
 
 
