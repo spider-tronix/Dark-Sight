@@ -216,7 +216,9 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from PIL import Image, ImageOps
 from torch.nn import ReplicationPad2d
+import tensorflow as tf
 
+from DarkNet.models.sid_unet import sidUnet
 # Ignore warnings
 import warnings
 
@@ -259,6 +261,7 @@ class DarkSightDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
+        print(root_dir)
         self.root_dir = root_dir
         self.long_exp_list = glob.glob(
             root_dir+'**/*long*.CR3', recursive=True)
@@ -267,10 +270,12 @@ class DarkSightDataset(Dataset):
         self.therm_list = glob.glob(
             root_dir+'**/temp.jpg', recursive=True)
         self.transform = transform
+        print(len(self.long_exp_list))
         assert(len(self.long_exp_list) == len(self.short_exp_list)
                and len(self.long_exp_list) == len(self.therm_list))
 
     def __len__(self):
+        print(len(self.long_exp_list))
         return len(self.long_exp_list)
 
     def __getitem__(self, idx):
@@ -379,6 +384,14 @@ class RandomFlip(object):
             therm = np.transpose(therm, (1, 0))
             long_exp = np.transpose(long_exp, (1, 0, 2))
         return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
+class ConcatTherm(object):
+    def __call__(self, sample):
+        long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+        # print('short_exp.shape: ', short_exp.shape, 'therm.shape: ', therm.shape)
+        input_sample = np.transpose(short_exp, (2, 0, 1))
+        input_sample = np.append(input_sample, np.expand_dims(therm, axis=0) , axis = 0)
+        print('input_sample.shape: ', input_sample.shape)
+        return {'input_sample': input_sample, 'output_sample:', long_exp}
 
 
 def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
@@ -386,6 +399,7 @@ def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
     transform.append(MatchSize(cam_shape, therm_shape))
     transform.append(RandomCrop())
     transform.append(RandomFlip())
+    transform.append(ConcatTherm())
     transform = transforms.Compose(transform)
     return transform
 
@@ -398,8 +412,11 @@ transformed_dataset = DarkSightDataset(
 # data = [transformed_dataset[0], transformed_dataset[1]]
 data = list(transformed_dataset)
 
-
+# print(data[0])
 # debugging
+
+'''dictionary format
+
 print('dataset1: ', data[0]['short_exposure'].shape,
       data[0]['thermal_response'].shape)
 # print('dataset2: ', data[1]['short_exposure'].shape,
@@ -415,3 +432,11 @@ plt.imshow(data[0]['short_exposure'][:, :, :3])
 print(data[0]['short_exposure'][:, :, 1:4].shape)
 plt.show()
 print(data[0]['thermal_response'][0][20:30])
+
+'''
+
+'''tensor format'''
+model = sidUnet()
+data[0] = tf.convert_to_tensor(torch)
+out = model.forward(data[0])
+print(out.shape)
