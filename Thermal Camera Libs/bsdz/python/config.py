@@ -1,5 +1,4 @@
-clearCommand = ["--folder", "/store_00020001/DCIM/101CANON",
-                "--delete-all-files", "-R"]
+clearCommand = ["--folder", "/store_00020001/DCIM/101CANON", "--delete-all-files", "-R"]
 triggerCommand = ["--trigger-capture"]
 downloadCommand = ["--get-all-files"]
 

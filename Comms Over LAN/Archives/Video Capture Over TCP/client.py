@@ -6,8 +6,8 @@ import zmq
 
 context = zmq.Context()
 footage_socket = context.socket(zmq.SUB)
-footage_socket.bind('tcp://*:5555')
-footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
+footage_socket.bind("tcp://*:5555")
+footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(""))
 
 while True:
     try:

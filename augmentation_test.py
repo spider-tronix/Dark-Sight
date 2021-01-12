@@ -219,18 +219,20 @@ from torch.nn import ReplicationPad2d
 import tensorflow as tf
 
 from DarkNet.models.sid_unet import sidUnet
+
 # Ignore warnings
 import warnings
 
 from torchvision.transforms.functional import pil_to_tensor
+
 warnings.filterwarnings("ignore")
 
-long_shots_dir = './dataset/dataset/' #Arvinth
+long_shots_dir = "./dataset/dataset/"  # Arvinth
 # long_shots_dir = '../dataset/'  # Harshit
 
-long_shot_cam = glob.glob(long_shots_dir+'**/*long*.CR3', recursive=True)
-short_shot_cam = glob.glob(long_shots_dir+'**/*short*.CR3', recursive=True)
-therm = glob.glob(long_shots_dir+'**/*temp.jpg', recursive=True)
+long_shot_cam = glob.glob(long_shots_dir + "**/*long*.CR3", recursive=True)
+short_shot_cam = glob.glob(long_shots_dir + "**/*short*.CR3", recursive=True)
+therm = glob.glob(long_shots_dir + "**/*temp.jpg", recursive=True)
 
 
 def pack_raw(raw, blevel=512):
@@ -244,10 +246,15 @@ def pack_raw(raw, blevel=512):
     H = img_shape[0]
     W = img_shape[1]
 
-    out = np.concatenate((im[0:H:2, 0:W:2, :],
-                          im[0:H:2, 1:W:2, :],
-                          im[1:H:2, 1:W:2, :],
-                          im[1:H:2, 0:W:2, :]), axis=2)
+    out = np.concatenate(
+        (
+            im[0:H:2, 0:W:2, :],
+            im[0:H:2, 1:W:2, :],
+            im[1:H:2, 1:W:2, :],
+            im[1:H:2, 0:W:2, :],
+        ),
+        axis=2,
+    )
     return out
 
 
@@ -263,16 +270,14 @@ class DarkSightDataset(Dataset):
         """
         print(root_dir)
         self.root_dir = root_dir
-        self.long_exp_list = glob.glob(
-            root_dir+'**/*long*.CR3', recursive=True)
-        self.short_exp_list = glob.glob(
-            root_dir+'**/*short*.CR3', recursive=True)
-        self.therm_list = glob.glob(
-            root_dir+'**/temp.jpg', recursive=True)
+        self.long_exp_list = glob.glob(root_dir + "**/*long*.CR3", recursive=True)
+        self.short_exp_list = glob.glob(root_dir + "**/*short*.CR3", recursive=True)
+        self.therm_list = glob.glob(root_dir + "**/temp.jpg", recursive=True)
         self.transform = transform
         print(len(self.long_exp_list))
-        assert(len(self.long_exp_list) == len(self.short_exp_list)
-               and len(self.long_exp_list) == len(self.therm_list))
+        assert len(self.long_exp_list) == len(self.short_exp_list) and len(
+            self.long_exp_list
+        ) == len(self.therm_list)
 
     def __len__(self):
         print(len(self.long_exp_list))
@@ -285,42 +290,61 @@ class DarkSightDataset(Dataset):
         short_exp = rawpy.imread(self.short_exp_list[idx])
         therm = Image.open(self.therm_list[idx])
         therm = ImageOps.grayscale(therm)
-        sample = {'long_exposure': long_exp,
-                  'short_exposure': short_exp, 'thermal_response': therm}
+        sample = {
+            "long_exposure": long_exp,
+            "short_exposure": short_exp,
+            "thermal_response": therm,
+        }
 
         if self.transform:
             sample = self.transform(sample)
 
-        return [torch.tensor(sample['input_sample'].copy()), torch.tensor(sample['output_sample'].copy())]
+        return [
+            torch.tensor(sample["input_sample"].copy()),
+            torch.tensor(sample["output_sample"].copy()),
+        ]
 
 
 class PreprocessRaw(object):
     def __call__(self, sample):
-        long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+        long_exp, short_exp, therm = (
+            sample["long_exposure"],
+            sample["short_exposure"],
+            sample["thermal_response"],
+        )
         long_exp = long_exp.postprocess(
-            use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16)
+            use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16
+        )
         long_exp = np.float32(long_exp / 65535.0)
         short_exp = pack_raw(short_exp)
-        return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
+        return {
+            "long_exposure": long_exp,
+            "short_exposure": short_exp,
+            "thermal_response": therm,
+        }
 
 
 class MatchSize(object):
-
     def __init__(self, cam_shape, therm_shape):
-        self.ratio = min(cam_shape[0]/therm_shape[1],
-                         cam_shape[1]/therm_shape[0])
+        self.ratio = min(cam_shape[0] / therm_shape[1], cam_shape[1] / therm_shape[0])
         self.therm_shape = (
-            int(therm_shape[0]*self.ratio), int(therm_shape[1]*self.ratio))
-        lpad = int((cam_shape[0] - self.therm_shape[1])/2)
+            int(therm_shape[0] * self.ratio),
+            int(therm_shape[1] * self.ratio),
+        )
+        lpad = int((cam_shape[0] - self.therm_shape[1]) / 2)
         rpad = cam_shape[0] - lpad - self.therm_shape[1]
-        upad = int((cam_shape[1] - self.therm_shape[0])/2)
+        upad = int((cam_shape[1] - self.therm_shape[0]) / 2)
         dpad = cam_shape[1] - upad - self.therm_shape[0]
         # self.padding = (upad, lpad, dpad, rpad) #for ImageOps.expand
         self.padding = (upad, dpad, lpad, rpad)  # for RepllicationPad2d
         self.shape = cam_shape
 
     def __call__(self, sample):
-        long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+        long_exp, short_exp, therm = (
+            sample["long_exposure"],
+            sample["short_exposure"],
+            sample["thermal_response"],
+        )
         therm = therm.resize(self.therm_shape)
         # therm = ImageOps.expand(therm, self.padding)
         print(self.padding)
@@ -328,7 +352,11 @@ class MatchSize(object):
         therm_tensor = transforms.ToTensor()(therm).unsqueeze_(0)
         therm_tensor = m(therm_tensor)
         therm = transforms.ToPILImage()(therm_tensor.squeeze_(0))
-        return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
+        return {
+            "long_exposure": long_exp,
+            "short_exposure": short_exp,
+            "thermal_response": therm,
+        }
 
 
 class RandomCrop(object):
@@ -337,42 +365,54 @@ class RandomCrop(object):
         self.hbuf = hbuf
         self.wbuf = wbuf
 
-    def __call__(self, sample, color_percent=70):
+    def __call__(self, sample, color_percent=10):
         iter_times = 0
         while True:
             iter_times += 1
-            long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+            long_exp, short_exp, therm = (
+                sample["long_exposure"],
+                sample["short_exposure"],
+                sample["thermal_response"],
+            )
             W = short_exp.shape[1]
             H = short_exp.shape[0]
             ps = self.ps
             xx = np.random.randint(self.wbuf, W - ps - self.wbuf)
             yy = np.random.randint(self.hbuf, H - ps - self.hbuf)
-            short_exp = short_exp[yy:yy + ps, xx:xx + ps, :]
-            therm = therm.crop((xx, yy, xx+ps, yy + ps))
-            long_exp = long_exp[yy * 2:yy * 2 +
-                                ps * 2, xx * 2:xx * 2 + ps * 2, :]
+            short_exp = short_exp[yy : yy + ps, xx : xx + ps, :]
+            therm = therm.crop((xx, yy, xx + ps, yy + ps))
+            long_exp = long_exp[yy * 2 : yy * 2 + ps * 2, xx * 2 : xx * 2 + ps * 2, :]
             cnt = 0
             for i in range(0, 512):
                 for j in range(0, 512):
-                    r = long_exp[i][j][0]*255
-                    g = long_exp[i][j][1]*255
-                    b = long_exp[i][j][2]*255
+                    r = long_exp[i][j][0] * 255
+                    g = long_exp[i][j][1] * 255
+                    b = long_exp[i][j][2] * 255
                     if r < 40 and g < 40 and b < 40:
                         cnt += 1
             print(cnt)
-            #color_precent added
-            if cnt < ((512*512)*color_percent/100) or iter_times > 10:
-                print('resampling..iteration:{}'.format(iter_times))
+            # color_precent added
+            break  # for fast testing
+            if cnt < ((512 * 512) * color_percent / 100) or iter_times > 10:
+                print("resampling..iteration:{}".format(iter_times))
                 break
-        return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
+        return {
+            "long_exposure": long_exp,
+            "short_exposure": short_exp,
+            "thermal_response": therm,
+        }
 
 
 class RandomFlip(object):
     def __call__(self, sample):
-        long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+        long_exp, short_exp, therm = (
+            sample["long_exposure"],
+            sample["short_exposure"],
+            sample["thermal_response"],
+        )
         therm = np.array(therm)
         if np.random.randint(2, size=1)[0] == 1:  # random flip
-            short_exp = np.flip(short_exp/255.0, axis=0)
+            short_exp = np.flip(short_exp / 255.0, axis=0)
             therm = np.flip(therm, axis=0)
             long_exp = np.flip(long_exp, axis=0)
         if np.random.randint(2, size=1)[0] == 1:
@@ -383,15 +423,25 @@ class RandomFlip(object):
             short_exp = np.transpose(short_exp, (1, 0, 2))
             therm = np.transpose(therm, (1, 0))
             long_exp = np.transpose(long_exp, (1, 0, 2))
-        return {'long_exposure': long_exp, 'short_exposure': short_exp, 'thermal_response': therm}
+        return {
+            "long_exposure": long_exp,
+            "short_exposure": short_exp,
+            "thermal_response": therm,
+        }
+
+
 class ConcatTherm(object):
     def __call__(self, sample):
-        long_exp, short_exp, therm = sample['long_exposure'], sample['short_exposure'], sample['thermal_response']
+        long_exp, short_exp, therm = (
+            sample["long_exposure"],
+            sample["short_exposure"],
+            sample["thermal_response"],
+        )
         # print('short_exp.shape: ', short_exp.shape, 'therm.shape: ', therm.shape)
         input_sample = np.transpose(short_exp, (2, 0, 1))
-        input_sample = np.append(input_sample, np.expand_dims(therm, axis=0) , axis = 0)
-        print('input_sample.shape: ', input_sample.shape)
-        return {'input_sample': input_sample, 'output_sample': long_exp}
+        input_sample = np.append(input_sample, np.expand_dims(therm, axis=0), axis=0)
+        print("input_sample.shape: ", input_sample.shape)
+        return {"input_sample": input_sample, "output_sample": long_exp}
 
 
 def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
@@ -404,47 +454,63 @@ def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
     return transform
 
 
-# drive code
-dataset_dir = './dataset/dataset/' #ARVINTH
-# dataset_dir = './dataset/' HARSHITH 
-transformed_dataset = DarkSightDataset(
-    dataset_dir, transform=my_transform(True))
-# data = [transformed_dataset[0], transformed_dataset[1]]
-data = list(transformed_dataset)
+if __name__ == "__main__":
+    # drive code
+    dataset_dir = "./dataset/dataset/"  # ARVINTH
+    # dataset_dir = './dataset/' HARSHITH
+    transformed_dataset = DarkSightDataset(dataset_dir, transform=my_transform(True))
+    # data = [transformed_dataset[0], transformed_dataset[1]]
+    data = list(transformed_dataset)
 
-# print(data[0])
-# debugging
+    # print(data[0])
+    # debugging
 
-'''dictionary format
+    """dictionary format
 
-print('dataset1: ', data[0]['short_exposure'].shape,
-      data[0]['thermal_response'].shape)
-# print('dataset2: ', data[1]['short_exposure'].shape,
-#       data[1]['thermal_response'].shape)
-# data[0]['thermal_response'].show()
-print(np.max(data[0]['long_exposure']))
-plt.figure()
-plt.imshow(data[0]['long_exposure'])
-plt.figure()
-plt.imshow(data[0]['thermal_response'])
-plt.figure()
-plt.imshow(data[0]['short_exposure'][:, :, :3])
-print(data[0]['short_exposure'][:, :, 1:4].shape)
-plt.show()
-print(data[0]['thermal_response'][0][20:30])
+    print('dataset1: ', data[0]['short_exposure'].shape,
+        data[0]['thermal_response'].shape)
+    # print('dataset2: ', data[1]['short_exposure'].shape,
+    #       data[1]['thermal_response'].shape)
+    # data[0]['thermal_response'].show()
+    print(np.max(data[0]['long_exposure']))
+    plt.figure()
+    plt.imshow(data[0]['long_exposure'])
+    plt.figure()
+    plt.imshow(data[0]['thermal_response'])
+    plt.figure()
+    plt.imshow(data[0]['short_exposure'][:, :, :3])
+    print(data[0]['short_exposure'][:, :, 1:4].shape)
+    plt.show()
+    print(data[0]['thermal_response'][0][20:30])
 
-'''
+    """
 
-'''tensor format'''
-model = sidUnet()
-# data[0] = torch.tensor(data[0])
-# print(data[0])
-# out = model.forward(data[0][0])
-# print(out.shape)
+    """tensor format"""
+    model = sidUnet()
+    # data[0] = torch.tensor(data[0])
+    # print(data[0])
+    # out = model.forward(data[0][0])
+    # print(out.shape)
 
-dataloader = torch.utils.data.DataLoader(data, batch_size=1, shuffle=True)
-dataiter = iter(dataloader)
-inputs, outputs = dataiter.next()
-print(inputs, outputs)
-prediction = model(inputs)
-print('predictions: ', prediction)
+    dataloader = DataLoader(data, batch_size=1, shuffle=True)
+    dataiter = iter(dataloader)
+    inputs, outputs = dataiter.next()
+    print(inputs, outputs)
+    prediction = model(inputs)
+    print("predictions: ", prediction)
+
+
+class DarkSighDataLoader:
+    def __init__(self):
+        # drive code
+        self.dataset_dir = "./dataset/dataset/"  # ARVINTH
+        # dataset_dir = './dataset/' HARSHITH
+        self.transformed_dataset = DarkSightDataset(
+            self.dataset_dir, transform=my_transform(True)
+        )
+        # data = [transformed_dataset[0], transformed_dataset[1]]
+        self.data = list(self.transformed_dataset)
+
+    def load(self, batch_size=1, shuffle=True):
+        dataloader = DataLoader(self.data, batch_size, shuffle=shuffle)
+        return dataloader

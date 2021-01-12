@@ -15,7 +15,9 @@ net(low, temps)
 
 number = 100
 
-print(f'Avg time for Vanilla net : {timeit.timeit(stmt=stmt, setup=setup, number=number) / number} secs')
+print(
+    f"Avg time for Vanilla net : {timeit.timeit(stmt=stmt, setup=setup, number=number) / number} secs"
+)
 
 # 1024 : 0.1809366957499992
 # 512 : 0.04730567336000149

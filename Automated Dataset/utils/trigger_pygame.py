@@ -18,10 +18,10 @@ def main():
     pygame.init()
     pygame.font.init()
     display = pygame.display.set_mode((320, 240))
-    pygame.display.set_caption('Thermal Cam')
+    pygame.display.set_caption("Thermal Cam")
     pygame.mouse.set_visible(True)
     wait()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

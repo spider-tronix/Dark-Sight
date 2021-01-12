@@ -7,7 +7,7 @@ string1 = ""
 string2 = ""
 string3 = ""
 
-for folder in glob.glob('./Dataset/*Cannon*'):
+for folder in glob.glob("./Dataset/*Cannon*"):
     for filename in glob.glob(os.path.join(folder, "*small*long*.JPG")):
         string1 = filename
     for filename in glob.glob(os.path.join(folder, "*small*short*.JPG")):
@@ -23,7 +23,7 @@ with open("myFile_jpg.txt", "w") as myFile:
     myFile.write(data)
 
 data = ""
-for folder in glob.glob('./Dataset/*Cannon*'):
+for folder in glob.glob("./Dataset/*Cannon*"):
     for filename in glob.glob(os.path.join(folder, "*raw*long*.CR3")):
         string1 = filename
     for filename in glob.glob(os.path.join(folder, "*raw*short*.CR3")):
@@ -38,7 +38,7 @@ with open("myFile_raw.txt", "w") as myFile:
     myFile.write(data)
 
 data = ""
-for folder in glob.glob('./Dataset/*Cannon*'):
+for folder in glob.glob("./Dataset/*Cannon*"):
     for filename in glob.glob(os.path.join(folder, "*raw*long*.JPG")):
         string1 = filename
     for filename in glob.glob(os.path.join(folder, "*raw*short*.JPG")):

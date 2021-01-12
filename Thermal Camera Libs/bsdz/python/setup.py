@@ -25,26 +25,32 @@ class sdist_ext_first(sdist):
         return sdist.run(self)
 
 
-classifiers = ['Development Status :: 4 - Beta',
-               'Operating System :: POSIX :: Linux',
-               'License :: OSI Approved :: MIT License',
-               'Intended Audience :: Developers',
-               'Programming Language :: Python :: 3',
-               'Topic :: Software Development',
-               'Topic :: System :: Hardware']
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Operating System :: POSIX :: Linux",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development",
+    "Topic :: System :: Hardware",
+]
 
 _MLX90640 = Extension(
-    '_MLX90640',
-    include_dirs=['../headers'],
-    sources=['../functions/MLX90640_API.cpp', '../functions/MLX90640_LINUX_I2C_Driver.cpp', 'cffi_wrapper.cpp']
+    "_MLX90640",
+    include_dirs=["../headers"],
+    sources=[
+        "../functions/MLX90640_API.cpp",
+        "../functions/MLX90640_LINUX_I2C_Driver.cpp",
+        "cffi_wrapper.cpp",
+    ],
 )
 
 setup(
-    name='MLX90640',
-    version='0.1.0',
+    name="MLX90640",
+    version="0.1.0",
     classifiers=classifiers,
     ext_modules=[_MLX90640],
     py_modules=["MLX90640"],
-    install_requires=['cffi', 'numpy'],
-    cmdclass={'build_py': build_py_ext_first, 'sdist': sdist_ext_first},
+    install_requires=["cffi", "numpy"],
+    cmdclass={"build_py": build_py_ext_first, "sdist": sdist_ext_first},
 )

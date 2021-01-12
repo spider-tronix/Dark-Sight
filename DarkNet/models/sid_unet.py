@@ -1,4 +1,4 @@
-#OM NAMO NARAYANA
+# OM NAMO NARAYANA
 import numpy as np
 import torch
 from skimage import io, transform
@@ -10,6 +10,7 @@ import tensorflow as tf
 
 # Ignore warnings
 import warnings
+
 
 class sidUnet(nn.Module):
     def __init__(self):
@@ -28,7 +29,7 @@ class sidUnet(nn.Module):
 
         self.conv5_1 = nn.Conv2d(256, 512, 3, padding=(1, 1))
         self.conv5_2 = nn.Conv2d(512, 512, 3, padding=(1, 1))
-        
+
         self.pool = nn.MaxPool2d(2)
 
         self.up_6 = nn.ConvTranspose2d(512, 256, 2, stride=(2, 2))
@@ -46,36 +47,38 @@ class sidUnet(nn.Module):
         self.up_9 = nn.ConvTranspose2d(64, 32, 2, stride=(2, 2))
         self.conv9_1 = nn.Conv2d(64, 32, 3, padding=(1, 1))
         self.conv9_2 = nn.Conv2d(32, 32, 3, padding=(1, 1))
-        
-        self.conv10 = nn.Conv2d(32, 12, 3, padding=(1, 1))
 
+        self.up_10 = nn.ConvTranspose2d(32, 16, 2, stride=(2, 2))
+        self.conv10 = nn.Conv2d(16, 12, 3, padding=(1, 1))
 
     def forward(self, x):
         conv1 = self.pool(F.relu(self.conv1_2(F.relu(self.conv1_1(x)))))
         conv2 = self.pool(F.relu(self.conv2_2(F.relu(self.conv2_1(conv1)))))
-        
+
         conv3 = self.pool(F.relu(self.conv3_2(F.relu(self.conv3_1(conv2)))))
         conv4 = self.pool(F.relu(self.conv4_2(F.relu(self.conv4_1(conv3)))))
         conv5 = self.pool(F.relu(self.conv5_2(F.relu(self.conv5_1(conv4)))))
-        
+
         # print('conv1.shape: ', conv1.shape, 'conv2.shape: ', conv2.shape, 'conv3.shape: ', conv3.shape, 'conv4.shape: ', conv4.shape, 'conv5.shape: ', conv5.shape, )
         # print('before upsampling:', conv5.shape, 'after upsampling:',  self.up_6(conv5).shape)
         # print('layer shape:', torch.cat((self.up_6(conv5),self.up_6(conv5)), dim = 1).shape)
-        up6 = torch.cat((self.up_6(conv5),conv4), dim = 1)
+        up6 = torch.cat((self.up_6(conv5), conv4), dim=1)
         conv6 = F.relu(self.conv6_2(F.relu(self.conv6_1(up6))))
         # print('before upsampling:', conv6.shape, 'after upsampling:',  self.up_7(conv6).shape)
-        up7 = torch.cat((self.up_7(conv6),conv3), dim = 1)
+        up7 = torch.cat((self.up_7(conv6), conv3), dim=1)
         conv7 = F.relu(self.conv7_2(F.relu(self.conv7_1(up7))))
-        up8 = torch.cat((self.up_8(conv7),conv2), dim = 1)
+        up8 = torch.cat((self.up_8(conv7), conv2), dim=1)
         conv8 = F.relu(self.conv8_2(F.relu(self.conv8_1(up8))))
-        up9 = torch.cat((self.up_9(conv8),conv1), dim = 1)
+        up9 = torch.cat((self.up_9(conv8), conv1), dim=1)
         conv9 = F.relu(self.conv9_2(F.relu(self.conv9_1(up9))))
-
-        conv10 = self.conv10(conv9)
+        up10 = self.up_10(conv9)
+        conv10 = self.conv10(up10)
         out = F.pixel_shuffle(conv10, 2)
-        print(conv10.shape, out.shape)
+        # out = tf.transpose(out, perm=[0, 2, 3, 1])
+        out = torch.transpose(out, 1, 2)  # 0, 2, 1, 3
+        out = torch.transpose(out, 2, 3)  # 0, 2, 3, 1
+        out = transforms.Normalize(0, 1)(out)
         return out
-
 
 
 # def lrelu(x):
@@ -138,8 +141,9 @@ class sidUnet(nn.Module):
 #     output = input
 #     return output
 
-
-'''trial run'''
-model = sidUnet()
-tin = torch.rand(1, 5, 512, 512)
-model.forward(tin)
+if __name__ == "__main__":
+    pass
+    """trial run"""
+    model = sidUnet()
+    tin = torch.rand(1, 5, 512, 512)
+    model.forward(tin)

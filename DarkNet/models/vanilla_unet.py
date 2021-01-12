@@ -17,10 +17,12 @@ class DownConv(nn.Module):
         self.out_channels = out_channels
         self.pooling = pooling
 
-        self.conv1 = nn.Conv2d(self.in_channels, self.out_channels,
-                               kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(self.out_channels, self.out_channels,
-                               kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(
+            self.in_channels, self.out_channels, kernel_size=3, stride=1, padding=1
+        )
+        self.conv2 = nn.Conv2d(
+            self.out_channels, self.out_channels, kernel_size=3, stride=1, padding=1
+        )
         self.act = nn.LeakyReLU(0.2)
 
         if self.pooling:
@@ -49,14 +51,17 @@ class UpConv(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
 
-        self.convT = nn.ConvTranspose2d(self.in_channels, self.out_channels,
-                                        kernel_size=2, stride=2)
+        self.convT = nn.ConvTranspose2d(
+            self.in_channels, self.out_channels, kernel_size=2, stride=2
+        )
 
-        self.conv1 = nn.Conv2d(self.out_channels * 2, self.out_channels,
-                               kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(
+            self.out_channels * 2, self.out_channels, kernel_size=3, stride=1, padding=1
+        )
 
-        self.conv2 = nn.Conv2d(self.out_channels, self.out_channels,
-                               kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(
+            self.out_channels, self.out_channels, kernel_size=3, stride=1, padding=1
+        )
 
         self.act = nn.LeakyReLU(0.2)
 
@@ -75,19 +80,34 @@ class VanillaUNet(nn.Module):
     def __init__(self, channels_1=32):
         super(VanillaUNet, self).__init__()
         conv_sizes = [1, 2, 4, 8, 16]
-        channels = [4] + [channels_1 * i for i in conv_sizes]  # [4, 32, 64, 128, 256, 512]
+        channels = [4] + [
+            channels_1 * i for i in conv_sizes
+        ]  # [4, 32, 64, 128, 256, 512]
 
         self.pools = [True] * 4 + [False]
         self.upsample_temps = nn.UpsamplingBilinear2d(size=SIZE)
 
-        self.encoder = nn.ModuleList([DownConv(in_channels, out_channels, pool)
-                                      for in_channels, out_channels, pool in zip(channels, channels[1:], self.pools)])
+        self.encoder = nn.ModuleList(
+            [
+                DownConv(in_channels, out_channels, pool)
+                for in_channels, out_channels, pool in zip(
+                    channels, channels[1:], self.pools
+                )
+            ]
+        )
 
-        self.decoder = nn.ModuleList([UpConv(in_channels, out_channels)
-                                      for in_channels, out_channels in zip(channels[::-1], channels[::-1][1:-1])])
+        self.decoder = nn.ModuleList(
+            [
+                UpConv(in_channels, out_channels)
+                for in_channels, out_channels in zip(
+                    channels[::-1], channels[::-1][1:-1]
+                )
+            ]
+        )
 
-        self.lastconv = nn.Conv2d(in_channels=channels_1, out_channels=3,
-                                  kernel_size=1, stride=1, padding=0)
+        self.lastconv = nn.Conv2d(
+            in_channels=channels_1, out_channels=3, kernel_size=1, stride=1, padding=0
+        )
 
         # self.upscale = torch.nn.PixelShuffle(2)  # UP Sampling (Inspired fom SuperResolution)
         # TODO: Use upscale in Testing Phase
@@ -112,7 +132,7 @@ class VanillaUNet(nn.Module):
         return x
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     net = VanillaUNet().cuda()
     model_summary(net)
     # low = torch.randint(2 ** 8, (1, 3, SIZE[0], SIZE[1])).float().cuda()

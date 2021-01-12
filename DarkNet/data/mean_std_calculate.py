@@ -4,11 +4,11 @@ import pandas as pd
 
 from results.configs import *
 
-tsf = pd.read_csv(DATALOADER_TXT, sep='\t', names=['long', 'short', 'temps'])
+tsf = pd.read_csv(DATALOADER_TXT, sep="\t", names=["long", "short", "temps"])
 arr = np.array([])
 for idx in range(len(tsf)):
     temps_img = os.path.join(ROOT_DIR, tsf.iloc[idx, 2])
-    temps_img = pd.read_csv(temps_img, sep='\t', header=None)
+    temps_img = pd.read_csv(temps_img, sep="\t", header=None)
     temps_img = temps_img.iloc[:, :-1]
     temps_img = temps_img.values
     temps_img = temps_img.flatten()

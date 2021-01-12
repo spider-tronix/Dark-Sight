@@ -6,7 +6,8 @@ import numpy as np
 lib_path = Path(__file__).parent / "_MLX90640.cpython-37m-arm-linux-gnueabihf.so"
 
 ffi = cffi.FFI()
-ffi.cdef("""
+ffi.cdef(
+    """
 typedef struct {
 int16_t kVdd;
 int16_t vdd25;
@@ -51,20 +52,30 @@ int SetInterleavedMode(uint8_t slaveAddr);
 int SetChessMode(uint8_t slaveAddr);
 void BadPixelsCorrection(uint16_t *pixels, float *to, int mode, paramsMLX90640 *params);
 
-""")
+"""
+)
 
 API = ffi.dlopen(str(lib_path))
 
 
 def temperature_data_to_ndarray(frame):
     """Converts c buffer storing temp data to numpy array of shape 24, 32"""
-    a = np.frombuffer(ffi.buffer(frame, np.dtype(np.float32).itemsize * 768), dtype=np.float32)
+    a = np.frombuffer(
+        ffi.buffer(frame, np.dtype(np.float32).itemsize * 768), dtype=np.float32
+    )
     return a.reshape((24, 32))
 
 
 _hertz_refreshrate_pairs = [
-    (0.5, 0), (1, 1), (2, 2), (4, 3),
-    (8, 4), (16, 5), (32, 6), (64, 7)]
+    (0.5, 0),
+    (1, 1),
+    (2, 2),
+    (4, 3),
+    (8, 4),
+    (16, 5),
+    (32, 6),
+    (64, 7),
+]
 
 hertz_to_refresh_rate = {h: rr for h, rr in _hertz_refreshrate_pairs}
 refresh_rate_to_hertz = {rr: h for h, rr in _hertz_refreshrate_pairs}
