@@ -365,7 +365,7 @@ class RandomCrop(object):
         self.hbuf = hbuf
         self.wbuf = wbuf
 
-    def __call__(self, sample, color_percent=10):
+    def __call__(self, sample, color_percent=50):
         iter_times = 0
         while True:
             iter_times += 1
@@ -383,16 +383,17 @@ class RandomCrop(object):
             therm = therm.crop((xx, yy, xx + ps, yy + ps))
             long_exp = long_exp[yy * 2 : yy * 2 + ps * 2, xx * 2 : xx * 2 + ps * 2, :]
             cnt = 0
-            for i in range(0, 512):
-                for j in range(0, 512):
-                    r = long_exp[i][j][0] * 255
-                    g = long_exp[i][j][1] * 255
-                    b = long_exp[i][j][2] * 255
-                    if r < 40 and g < 40 and b < 40:
-                        cnt += 1
-            print(cnt)
+            # #commented for the sake of testing
+            # for i in range(0, 512):
+            #     for j in range(0, 512):
+            #         r = long_exp[i][j][0] * 255
+            #         g = long_exp[i][j][1] * 255
+            #         b = long_exp[i][j][2] * 255
+            #         if r < 40 and g < 40 and b < 40:
+            #             cnt += 1
+            # print(cnt)
             # color_precent added
-            break  # for fast testing
+            break  # for fast testing remove this
             if cnt < ((512 * 512) * color_percent / 100) or iter_times > 10:
                 print("resampling..iteration:{}".format(iter_times))
                 break

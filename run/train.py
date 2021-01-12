@@ -22,9 +22,9 @@ criterion = nn.L1Loss()
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
 plot_freq = 10
-error_freq = 20
+error_freq = 5
 
-epochs = 100
+epochs = 200
 for epoch in range(epochs):
 
     running_loss = 0.0
@@ -44,8 +44,11 @@ for epoch in range(epochs):
         ):  # print every 2 mini-batches
             print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2))
             running_loss = 0.0
-            plt.figure()
-            plt.imshow(outputs.detach().numpy()[0])
+            f, (ax1, ax2) = plt.subplots(1, 2)
+            ax1.imshow(outputs.detach().numpy()[0])
+            ax2.imshow(gt.detach().numpy()[0])
+            plt.savefig('./results/epoch{}.png'.format(epoch+1))
+
 
 print("Finished Training")
-plt.show()
+# plt.show()
