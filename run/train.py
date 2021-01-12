@@ -23,7 +23,7 @@ optimizer = optim.Adam(model.parameters(), lr=1e-4)
 plot_freq = 10
 error_freq = 5
 
-epochs = 20
+epochs = 2
 for epoch in range(epochs):
 
     running_loss = 0.0

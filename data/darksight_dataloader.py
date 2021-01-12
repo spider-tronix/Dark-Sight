@@ -17,33 +17,52 @@ from data.darksight_dataset import DarkSightDataset
 
 
 class MatchSize(object):
+    """
+    __init__(self, cam_shape, therm_shape):
+        Args:
+            cam_shape: shape of short exposure camera image (matplotlib format)
+            therm_shape: shape of thermal image (PIL fomrat)
+        Returns:
+            NULL
+    __call__(self, sample):
+        Args:
+            {long_exposure, short_exposure, thermal_response}
+        Returns:
+            {long_exposure, short_exposure, thermal_response}: thermal_response in PIL format
+    """
+
     def __init__(self, cam_shape, therm_shape):
         self.ratio = min(cam_shape[0] / therm_shape[1], cam_shape[1] / therm_shape[0])
+
+        # resizing preserving aspect ratio
         self.therm_shape = (
             int(therm_shape[0] * self.ratio),
             int(therm_shape[1] * self.ratio),
         )
+
         lpad = int((cam_shape[0] - self.therm_shape[1]) / 2)
         rpad = cam_shape[0] - lpad - self.therm_shape[1]
         upad = int((cam_shape[1] - self.therm_shape[0]) / 2)
         dpad = cam_shape[1] - upad - self.therm_shape[0]
-        # self.padding = (upad, lpad, dpad, rpad) #for ImageOps.expand
         self.padding = (upad, dpad, lpad, rpad)  # for RepllicationPad2d
         self.shape = cam_shape
 
     def __call__(self, sample):
+
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
             sample["thermal_response"],
         )
+
         therm = therm.resize(self.therm_shape)
-        # therm = ImageOps.expand(therm, self.padding)
-        # print(self.padding)
         m = ReplicationPad2d(self.padding)
         therm_tensor = transforms.ToTensor()(therm).unsqueeze_(0)
         therm_tensor = m(therm_tensor)
+
+        # input and output are PIL image
         therm = transforms.ToPILImage()(therm_tensor.squeeze_(0))
+
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
@@ -52,12 +71,29 @@ class MatchSize(object):
 
 
 class RandomCrop(object):
+    """
+    __init__(self, ps, hbuf, wbuf):
+        Args:
+            ps: patch size
+            hbuf: minimum starting y coordinate
+            wbuf: minimum sarting x coordinate
+        Returns:
+            NULL
+    __call__(self, sample, color_percent=50):
+       Args:
+            {long_exposure, short_exposure, thermal_response}:thermal_response in PIL format
+            color_percent[optional]: pecentage of pixels above the fixed threshold
+        Returns:
+            {long_exposure, short_exposure, thermal_response}:thermal_response in PIL formatat
+    """
+
     def __init__(self, ps=512, hbuf=550, wbuf=550):
         self.ps = ps  # patch size
         self.hbuf = hbuf
         self.wbuf = wbuf
 
     def __call__(self, sample, color_percent=50):
+
         iter_times = 0
         while True:
             iter_times += 1
@@ -75,19 +111,16 @@ class RandomCrop(object):
             therm = therm.crop((xx, yy, xx + ps, yy + ps))
             long_exp = long_exp[yy * 2 : yy * 2 + ps * 2, xx * 2 : xx * 2 + ps * 2, :]
             cnt = 0
-            # #commented for the sake of testing
-            # for i in range(0, 512):
-            #     for j in range(0, 512):
-            #         r = long_exp[i][j][0] * 255
-            #         g = long_exp[i][j][1] * 255
-            #         b = long_exp[i][j][2] * 255
-            #         if r < 40 and g < 40 and b < 40:
-            #             cnt += 1
-            # print(cnt)
+            for i in range(0, 512):
+                for j in range(0, 512):
+                    r = long_exp[i][j][0] * 255
+                    g = long_exp[i][j][1] * 255
+                    b = long_exp[i][j][2] * 255
+                    if r < 40 and g < 40 and b < 40:
+                        cnt += 1
             # color_precent added
-            break  # for fast testing; remove this;
             if cnt < ((512 * 512) * color_percent / 100) or iter_times > 10:
-                print("resampling..iteration:{}".format(iter_times))
+                print("sampled on {} iteration".format(iter_times))
                 break
         return {
             "long_exposure": long_exp,
@@ -97,7 +130,17 @@ class RandomCrop(object):
 
 
 class RandomFlip(object):
+
+    """
+    __call__(self, sample):
+        Args:
+            {long_exposure, short_exposure, thermal_response}:thermal_response in PIL format
+        Returns:
+            {long_exposure, short_exposure, thermal_response}:thermal_response in numpy format
+    """
+
     def __call__(self, sample):
+
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
@@ -124,16 +167,24 @@ class RandomFlip(object):
 
 
 class ConcatTherm(object):
+
+    """
+    __call__(self, sample):
+        Args:
+            {long_exposure, short_exposure, thermal_response}:thermal_response in numpy format
+    Returns:
+            {input_sample, output_sample}:input_sample is concatenation of short_exposure and thermal response
+    """
+
     def __call__(self, sample):
+
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
             sample["thermal_response"],
         )
-        # print('short_exp.shape: ', short_exp.shape, 'therm.shape: ', therm.shape)
         input_sample = np.transpose(short_exp, (2, 0, 1))
         input_sample = np.append(input_sample, np.expand_dims(therm, axis=0), axis=0)
-        # print("input_sample.shape: ", input_sample.shape)
         return {"input_sample": input_sample, "output_sample": long_exp}
 
 
@@ -148,8 +199,7 @@ def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
 
 class DarkSighDataLoader:
     def __init__(self):
-        self.dataset_dir = "./dataset/dataset/"  # ARVINTH
-        # dataset_dir = './dataset/' HARSHITH
+        self.dataset_dir = "./dataset/"
         self.transformed_dataset = DarkSightDataset(
             self.dataset_dir, transform=my_transform(True)
         )

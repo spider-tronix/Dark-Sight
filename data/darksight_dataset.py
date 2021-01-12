@@ -123,12 +123,8 @@ class DarkSightDataset(Dataset):
 
 if __name__ == "__main__":
 
-    long_shots_dir = "./dataset/dataset/"  # Arvinth
-    # long_shots_dir = '../dataset/'  # Harshit
-
     # drive code
-    dataset_dir = "./dataset/dataset/"  # ARVINTH
-    # dataset_dir = './dataset/' HARSHITH
+    dataset_dir = "./dataset/"
     transformed_dataset = DarkSightDataset(dataset_dir)
     data = list(transformed_dataset)
     print(data[0])
