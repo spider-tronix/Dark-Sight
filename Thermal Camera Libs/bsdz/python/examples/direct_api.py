@@ -11,7 +11,7 @@ API.SetRefreshRate(MLX_I2C_ADDR, hertz_to_refresh_rate[hertz])
 API.SetChessMode(MLX_I2C_ADDR)
 
 # POR
-time.sleep(.08)  # wait 80ms
+time.sleep(0.08)  # wait 80ms
 time.sleep(2 / hertz)  # delay det by refresh rate
 
 # Extract calibration data from EEPROM and store in RAM
@@ -37,7 +37,7 @@ image_buffer = ffi.new("float[768]")
 print("Calc Hertz should be close to chosen value (%s)" % hertz)
 last = time.monotonic()
 while True:
-    API.GetFrameData(MLX_I2C_ADDR, frame_buffer);
+    API.GetFrameData(MLX_I2C_ADDR, frame_buffer)
     now = time.monotonic()
     diff = now - last
     print("Calc Hz: %s" % (1 / diff))
@@ -49,7 +49,7 @@ while True:
 
     # The object temperatures for all 768 pixels in a
     # frame are stored in the mlx90640To array
-    API.CalculateTo(frame_buffer, params, emissivity, tr, image_buffer);
+    API.CalculateTo(frame_buffer, params, emissivity, tr, image_buffer)
     print("Subpage no: %s" % API.GetSubPageNumber(frame_buffer))
 
     print(temperature_data_to_ndarray(image_buffer))

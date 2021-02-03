@@ -9,6 +9,7 @@ import cv2
 import matplotlib as mpl
 import numpy as np
 import pygame
+
 # from MLX90640 import API, ffi, hertz_to_refresh_rate, temperature_data_to_ndarray
 from PIL import Image
 from matplotlib import cm
@@ -34,17 +35,21 @@ def increment_refresh_rate():
 
 def show_text(display, text, pos, font, action=None):
     surf = font.render(text, False, (255, 255, 255))
-    if action and pygame.mouse.get_pressed()[0] and surf.get_rect().move(pos).collidepoint(pygame.mouse.get_pos()):
+    if (
+        action
+        and pygame.mouse.get_pressed()[0]
+        and surf.get_rect().move(pos).collidepoint(pygame.mouse.get_pos())
+    ):
         action()
     display.blit(surf, pos)
 
 
 def killGphoto2Process():
-    p = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE)
+    p = subprocess.Popen(["ps", "-A"], stdout=subprocess.PIPE)
     out, err = p.communicate()
 
     for line in out.splitlines():
-        if b'gvfsd-gphoto2' in line:
+        if b"gvfsd-gphoto2" in line:
             pid = int(line.split(None, 1)[0])
             os.kill(pid, signal.SIGKILL)
 
@@ -78,15 +83,15 @@ def renameFiles(ID, shot_time):
 class ThermalFeed:
     def __init__(self):
         # setup colour map
-        self.cmap = cm.get_cmap('Spectral_r')
+        self.cmap = cm.get_cmap("Spectral_r")
 
         # set up display
         pygame.init()
         pygame.font.init()
         self.display = pygame.display.set_mode((320, 240))
-        pygame.display.set_caption('Thermal Cam')
+        pygame.display.set_caption("Thermal Cam")
         pygame.mouse.set_visible(True)
-        font = pygame.font.SysFont('freemono', 10)
+        font = pygame.font.SysFont("freemono", 10)
 
         """# mlx90640 settings
         self.MLX_I2C_ADDR = 0x33
@@ -154,12 +159,12 @@ def main():
             captureImages()
             renameFiles(picID, shot_time + "small_long")
 
-            pygame.image.save(thermalcam.display, "thermal" + '.JPG')
+            pygame.image.save(thermalcam.display, "thermal" + ".JPG")
             renameFiles(picID, shot_time + "thermal")
             break
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     picID = "Cannon800DShots"
     shot_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 

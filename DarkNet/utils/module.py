@@ -12,7 +12,7 @@ def model_summary(model):
         print()
         param = 0
         try:
-            bias = (i.bias is not None)
+            bias = i.bias is not None
         except:
             bias = False
         if not bias:

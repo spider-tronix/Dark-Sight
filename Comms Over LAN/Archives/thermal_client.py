@@ -27,11 +27,11 @@ class Netcat:
     def read_until(self, data):
         """ Read data into the buffer until we have data """
         while data not in self.buff:
-            self.buff += self.conn.recv(1024).decode('ascii')
+            self.buff += self.conn.recv(1024).decode("ascii")
 
         pos = self.buff.find(data)
-        rval = self.buff[:pos + len(data)]
-        self.buff = self.buff[pos + len(data):]
+        rval = self.buff[: pos + len(data)]
+        self.buff = self.buff[pos + len(data) :]
 
         return rval
 
@@ -44,11 +44,13 @@ class Netcat:
 
 class ThermalCamera:
     def __init__(self):
-        self.port = '22'
-        self.uname = 'pi'
-        self.passd = 'ni6ga2rd'
-        self.ip = '192.168.0.109'
-        self.pi_ssh = ParallelSSHClient(hosts=[self.ip], user=self.uname, password=self.passd)
+        self.port = "22"
+        self.uname = "pi"
+        self.passd = "ni6ga2rd"
+        self.ip = "192.168.0.109"
+        self.pi_ssh = ParallelSSHClient(
+            hosts=[self.ip], user=self.uname, password=self.passd
+        )
         self.connect_ssh()
 
     def connect_ssh(self):
@@ -63,7 +65,9 @@ class ThermalCamera:
         # _, _, err = self.pi_ssh.exec_command('tmux send -t two "timeout 4 ~/bin/fbuf" ENTER', get_pty=True)
         # _ = self.pi_ssh.exec_command('tmux new-session -d "timeout 4 ~/bin/fbuf"')
 
-        self.pi_ssh.run_command(command='tmux new-session -d "~/test | nc 192.168.0.104 2000"')
+        self.pi_ssh.run_command(
+            command='tmux new-session -d "~/test | nc 192.168.0.104 2000"'
+        )
 
         # self.revive_cam()
         # err = err.readlines()
@@ -75,10 +79,10 @@ class ThermalCamera:
 
 
 def stdout2arr(string):
-    tem_row = list(string.strip().split('\n'))
+    tem_row = list(string.strip().split("\n"))
     temp = []
     for col in tem_row:
-        temp.append(list(map(float, col.strip().split(' '))))
+        temp.append(list(map(float, col.strip().split(" "))))
     temp = np.array(temp, dtype=np.float32)
 
     # temp = np.flipud(temp)
@@ -88,42 +92,46 @@ def stdout2arr(string):
 
 
 def arr2heatmap(arr):
-    heatmap = cv2.normalize(arr, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    heatmap = cv2.normalize(
+        arr, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U
+    )
     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
     return heatmap
 
+
 def read(op):
-    nc = Netcat('192.168.0.104', 1234)
+    nc = Netcat("192.168.0.104", 1234)
     cam = ThermalCamera()
     cam.trigger_camera()
 
     nc.listen()
-    _ = nc.read_until('End')
+    _ = nc.read_until("End")
 
     while True:
         try:
-            data = nc.read_until('End')
-            data = data[data.find('Subpage:') + 11:-4]
+            data = nc.read_until("End")
+            data = data[data.find("Subpage:") + 11 : -4]
             op = stdout2arr(data)
         except Exception as e:
             print(e)
 
+
 def main():
-    nc = Netcat('192.168.0.104', 2000)
+    nc = Netcat("192.168.0.104", 2000)
     cam = ThermalCamera()
     cam.trigger_camera()
 
     nc.listen()
-    _ = nc.read_until('End')
-    thermal = 'Thermal Feed'
+    _ = nc.read_until("End")
+    thermal = "Thermal Feed"
     cv2.namedWindow(thermal, cv2.WINDOW_NORMAL)
 
     while True:
         try:
             tick = time.time()
 
-            data = nc.read_until('End')
-            data = data[data.find('Subpage:') + 11:-4]
+            data = nc.read_until("End")
+            data = data[data.find("Subpage:") + 11 : -4]
             proc = stdout2arr(data)
 
             tock = time.time()
@@ -133,13 +141,13 @@ def main():
             heatmap = arr2heatmap(vis)
             cv2.imshow(thermal, heatmap)
             ch = cv2.waitKey(1)
-            if ch == ord('q'):
+            if ch == ord("q"):
                 break
         except Exception as e:
             print(e)
             # cam.revive_cam()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
     cv2.destroyAllWindows()

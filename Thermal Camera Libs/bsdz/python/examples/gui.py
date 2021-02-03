@@ -24,22 +24,26 @@ def increment_refresh_rate():
 
 def show_text(display, text, pos, font, action=None):
     surf = font.render(text, False, (255, 255, 255))
-    if action and pygame.mouse.get_pressed()[0] and surf.get_rect().move(pos).collidepoint(pygame.mouse.get_pos()):
+    if (
+        action
+        and pygame.mouse.get_pressed()[0]
+        and surf.get_rect().move(pos).collidepoint(pygame.mouse.get_pos())
+    ):
         action()
     display.blit(surf, pos)
 
 
 def main_loop(filename):
     # setup colour map
-    cmap = cm.get_cmap('Spectral_r')
+    cmap = cm.get_cmap("Spectral_r")
 
     # set up display
     pygame.init()
     pygame.font.init()
     display = pygame.display.set_mode((320, 240))
-    pygame.display.set_caption('Thermal Cam')
+    pygame.display.set_caption("Thermal Cam")
     pygame.mouse.set_visible(True)
-    font = pygame.font.SysFont('freemono', 10)
+    font = pygame.font.SysFont("freemono", 10)
 
     # mlx90640 settings
     MLX_I2C_ADDR = 0x33
@@ -77,7 +81,7 @@ def main_loop(filename):
 
         # The object temperatures for all 768 pixels in a
         # frame are stored in the mlx90640To array
-        API.CalculateTo(frame_buffer, params, emissivity, tr, image_buffer);
+        API.CalculateTo(frame_buffer, params, emissivity, tr, image_buffer)
 
         ta_np = temperature_data_to_ndarray(image_buffer)
         ta_img = td_to_image(ta_np, cmap)
@@ -90,8 +94,8 @@ def main_loop(filename):
 
         pygame.display.update()
 
-        pygame.image.save(display, filename + '.JPG')
+        pygame.image.save(display, filename + ".JPG")
 
 
 if __name__ == "__main__":
-    main_loop('test_thermal_cam')
+    main_loop("test_thermal_cam")

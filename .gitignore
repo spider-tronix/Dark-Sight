@@ -7,3 +7,5 @@ __pycache__
 ignore
 .pylintrc
 dataset/
+results/*
+Arvinth/

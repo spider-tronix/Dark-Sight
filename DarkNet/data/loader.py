@@ -30,7 +30,7 @@ class Precious(Dataset):
         :param path: Path for the dataset contents text file
         :return: Dataframe with cols of 'long', 'short', 'temps'
         """
-        tsf = pd.read_csv(path, sep='\t', names=['long', 'short', 'temps'])
+        tsf = pd.read_csv(path, sep="\t", names=["long", "short", "temps"])
         return tsf
 
     def __len__(self):
@@ -52,7 +52,7 @@ class Precious(Dataset):
 
         long_img = io.imread(long_img)
         short_img = io.imread(short_img)
-        temps_img = pd.read_csv(temps_img, sep='\t', header=None)
+        temps_img = pd.read_csv(temps_img, sep="\t", header=None)
         temps_img = temps_img.iloc[:, :-1]
         temps_img = temps_img.values
 
@@ -61,18 +61,25 @@ class Precious(Dataset):
             short_img = self.transform(short_img)
             temps_img = torch.Tensor((temps_img - 29.99) / 1.049)
 
-        data_sample = {'long_img': long_img.cuda(),
-                       'short_img': short_img.cuda(),
-                       'temps_img': temps_img.cuda()}
+        data_sample = {
+            "long_img": long_img.cuda(),
+            "short_img": short_img.cuda(),
+            "temps_img": temps_img.cuda(),
+        }
 
         return data_sample
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     precious = Precious(transform=simple_transform)
     fig = plt.figure()
     for i in range(len(precious)):
         sample = precious[i]
-        print(i, sample['long_img'].shape, sample['short_img'].shape, sample['temps_img'].shape)
+        print(
+            i,
+            sample["long_img"].shape,
+            sample["short_img"].shape,
+            sample["temps_img"].shape,
+        )
         if i == 3:
             break
