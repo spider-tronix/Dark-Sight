@@ -115,14 +115,29 @@ for epoch in range(epoch_loaded, epoch_loaded + epochs):
                 ][:, :, :3]
             )
 
-            # print(
-            #     "prediction shape: ",
-            #     outputs.detach().numpy()[0].shape,
-            #     "min: ",
-            #     outputs.min(1, keepdim=True)[0],
-            #     "max: ",
-            #     outputs.max(1, keepdim=True)[0],
-            # )
+            print(
+                "input shape: ",
+                torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2)
+                .numpy()[0]
+                .shape,
+                "min: ",
+                torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2).min(
+                    1, keepdim=True
+                )[0],
+                "max: ",
+                torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2).max(
+                    1, keepdim=True
+                )[0],
+            )
+
+            print(
+                "prediction shape: ",
+                outputs.detach().numpy()[0].shape,
+                "min: ",
+                outputs.min(1, keepdim=True)[0],
+                "max: ",
+                outputs.max(1, keepdim=True)[0],
+            )
 
             plt.savefig(save_dir + "epoch{}.png".format(epoch + 1))
 
