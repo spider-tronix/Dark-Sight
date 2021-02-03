@@ -218,4 +218,12 @@ class DarkSighDataLoader:
 if __name__ == "__main__":
     data = DarkSighDataLoader().load()
     data = iter(data)
-    print(next(data))
+    nsamples = 1
+    for i in range(nsamples):
+        sample_data = next(data)
+        sample_img = torch.transpose(torch.transpose(sample_data[0], 1, 3), 1, 2)
+
+        plt.figure()
+        plt.imshow(sample_img.detach().numpy()[0][:, :, :3])
+        plt.savefig("./results/augmentation/img{}.png".format(i + 1))
+        plt.show()

@@ -104,7 +104,7 @@ class DarkSightDataset(Dataset):
         therm = ImageOps.grayscale(therm)
         sample = {
             "long_exposure": long_exp,
-            "short_exposure": short_exp,
+            "short_exposure": long_exp,#change to short_exp
             "thermal_response": therm,
         }
 

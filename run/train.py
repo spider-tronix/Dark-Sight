@@ -45,9 +45,10 @@ for epoch in range(epochs):
         if i % batch_size == 1 and epoch % error_freq == 1:
             print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2))
             running_loss = 0.0
-            f, (ax1, ax2) = plt.subplots(1, 2)
+            f, (ax1, ax2, ax3) = plt.subplots(1, 3)
             ax1.imshow(outputs.detach().numpy()[0])
             ax2.imshow(gt.detach().numpy()[0])
+            ax3.imshow(inputs.detach().transpose(inputs, 1, 3).numpy()[0])
             plt.savefig("./results/lavi_unet_results/epoch{}.png".format(epoch + 1))
 
 
