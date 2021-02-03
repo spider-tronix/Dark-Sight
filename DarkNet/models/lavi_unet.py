@@ -7,11 +7,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class laviUnet(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, inc_therm=True):
         super(laviUnet, self).__init__()
-        
+        if(inc_therm):
+            fchannel = 5
+        else:
+            fchannel = 4
         #device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.conv1_1 = nn.Conv2d(5, 32, kernel_size=3, stride=1, padding=1)
+        self.conv1_1 = nn.Conv2d(fchannel, 32, kernel_size=3, stride=1, padding=1)
         self.conv1_2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.MaxPool2d(kernel_size=2)
         
@@ -90,7 +93,7 @@ class laviUnet(nn.Module):
         
         conv10= self.conv10_1(conv9)
         out = nn.functional.pixel_shuffle(conv10, 2)
-        print('prediction shape:', out.shape)
+        # print('prediction shape:', out.shape)
         return out
 
     def _initialize_weights(self):
