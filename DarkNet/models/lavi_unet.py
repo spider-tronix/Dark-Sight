@@ -94,7 +94,8 @@ class laviUnet(nn.Module):
 
         conv10 = self.conv10_1(conv9)
         out = nn.functional.pixel_shuffle(conv10, 2)
-        # print('prediction shape:', out.shape)
+        out -= out.min(1, keepdim=True)[0]
+        out /= out.max(1, keepdim=True)[0]
         return out
 
     def _initialize_weights(self):

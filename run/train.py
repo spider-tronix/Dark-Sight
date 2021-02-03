@@ -46,6 +46,9 @@ os.chdir("./")
 optimizer = optim.Adam(model.parameters(), lr=lr)
 criterion = nn.L1Loss()
 
+
+"""creating necessary directories"""
+
 if not load_weights or os.listdir(checkpoint_dir) == []:
     if load_weights:
         print("no models saved")
@@ -53,13 +56,31 @@ else:
     checkpoint = torch.load(checkpoint_dir + os.listdir(checkpoint_dir)[-1])
     model.load_state_dict(checkpoint["model_state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-    epoch = checkpoint["epoch"]
+    epoch_loaded = checkpoint["epoch"]
     print("model loaded")
+
+
+if not inc_therm:
+    save_dir = "./results/without_therm/normalized/"
+
+try:
+    os.makedirs(save_dir)
+    print(save_dir + " created")
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
+
+try:
+    os.makedirs(checkpoint_dir)
+    print(checkpoint_dir + " created")
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
 
 trainloader = DarkSighDataLoader(inc_therm=inc_therm).load(batch_size=batch_size)
 
 
-for epoch in range(epochs):
+for epoch in range(epoch_loaded, epoch_loaded + epochs):
 
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
@@ -72,6 +93,8 @@ for epoch in range(epochs):
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
+
+        """saving results"""
         if i % batch_size == 1 and epoch % error_freq == 1:
             print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2))
             running_loss = 0.0
@@ -84,20 +107,10 @@ for epoch in range(epochs):
                 ][:, :, 3]
             )
 
-            if not inc_therm:
-                save_dir = "./results/without_therm/"
+            plt.savefig(save_dir + "epoch{}.png".format(epoch + 1))
 
-            try:
-                os.makedirs(save_dir)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
+        """saving checkpoints"""
         if i % batch_size == 1 and epoch % checkpoint_freq == 1:
-            try:
-                os.makedirs(checkpoint_dir)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
 
             torch.save(
                 {

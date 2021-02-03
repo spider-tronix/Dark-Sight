@@ -69,22 +69,30 @@ class PreprocessRaw(object):
 class DarkSightDataset(Dataset):
     """DarkSight dataset."""
 
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, transform=None, raw_format=True):
         """
         Args:
             root_dir (string): Directory with all the datapoints.
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.transform = [PreprocessRaw()]
+        self.raw_format = raw_format
+        self.transform = []
+        if(raw_format):
+            self.transform.append(PreprocessRaw())
         if transform:
             for t in transform:
                 self.transform.append(t)
         self.transform = transforms.Compose(self.transform)
 
+        if(raw_format):
+            extension = '.CR3'
+        else:
+            extension = '.JPG'
+
         self.root_dir = root_dir
-        self.long_exp_list = glob.glob(root_dir + "**/*long*.CR3", recursive=True)
-        self.short_exp_list = glob.glob(root_dir + "**/*short*.CR3", recursive=True)
+        self.long_exp_list = glob.glob(root_dir + "**/*raw*long*"+extension, recursive=True)
+        self.short_exp_list = glob.glob(root_dir + "**/*raw*short*"+extension, recursive=True)
         self.therm_list = glob.glob(root_dir + "**/temp.jpg", recursive=True)
         print("no. of datapoints", len(self.long_exp_list))
         assert len(self.long_exp_list) == len(self.short_exp_list) and len(
@@ -98,8 +106,12 @@ class DarkSightDataset(Dataset):
         print("data index", idx)
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        long_exp = rawpy.imread(self.long_exp_list[idx])
-        short_exp = rawpy.imread(self.short_exp_list[idx])
+        if(self.raw_format):
+            long_exp = rawpy.imread(self.long_exp_list[idx])
+            short_exp = rawpy.imread(self.short_exp_list[idx])
+        else:
+            long_exp = plt.imread(self.long_exp_list[idx])
+            short_exp = plt.imread(self.short_exp_list[idx])
         therm = Image.open(self.therm_list[idx])
         therm = ImageOps.grayscale(therm)
         sample = {
@@ -107,8 +119,10 @@ class DarkSightDataset(Dataset):
             "short_exposure": short_exp,  # change to long_exp for debugging augmentation
             "thermal_response": therm,
         }
+        print(len(sample))
 
         sample = self.transform(sample)
+        print(len(sample))
 
         try:
             return [
@@ -124,7 +138,7 @@ if __name__ == "__main__":
 
     # drive code
     dataset_dir = "./dataset/"
-    transformed_dataset = DarkSightDataset(dataset_dir)
+    transformed_dataset = DarkSightDataset(dataset_dir, raw_format=False)
     data = list(transformed_dataset)
     print(data[0])
     # debugging
