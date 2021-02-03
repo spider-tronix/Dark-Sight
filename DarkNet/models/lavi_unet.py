@@ -11,6 +11,15 @@ import os
 
 
 class laviUnet(nn.Module):
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                m.weight.data.normal_(0.0, 0.02)
+                if m.bias is not None:
+                    m.bias.data.normal_(0.0, 0.02)
+            if isinstance(m, nn.ConvTranspose2d):
+                m.weight.data.normal_(0.0, 0.02)
+
     def __init__(self, num_classes=10, inc_therm=True, raw_format=True):
         super(laviUnet, self).__init__()
         self.raw_format = raw_format
@@ -59,6 +68,8 @@ class laviUnet(nn.Module):
             self.conv10_1 = nn.Conv2d(32, 12, kernel_size=1, stride=1)
         else:
             self.conv10_1 = nn.Conv2d(32, 3, kernel_size=1, stride=1)
+
+        self._initialize_weights()
 
     def forward(self, x):
         conv1 = self.lrelu(self.conv1_1(x))
@@ -142,8 +153,18 @@ if __name__ == "__main__":
     print("input shape", img.shape)
     output = model(img)
     print(output.shape)
-    f, (ax1, ax2) = plt.subplots(1, 2)
-    ax1.imshow(torch.transpose(img, 1, 3).detach().numpy()[0])
-    ax2.imshow(torch.transpose(output, 1, 3).detach().numpy()[0])
+    f, (ax1, ax2) = plt.subplots(2, 3)
+    ax1[0].imshow(torch.transpose(img, 1, 3).detach().numpy()[0])
+    ax1[1].imshow(torch.transpose(output, 1, 3).detach().numpy()[0])
+    ax2[0].imshow(
+        torch.transpose(output, 1, 3).detach().numpy()[0][:, :, 0], cmap="gray"
+    )
+    ax2[1].imshow(
+        torch.transpose(output, 1, 3).detach().numpy()[0][:, :, 1], cmap="gray"
+    )
+    ax2[2].imshow(
+        torch.transpose(output, 1, 3).detach().numpy()[0][:, :, 2], cmap="gray"
+    )
+
     print(output)
     plt.show()
