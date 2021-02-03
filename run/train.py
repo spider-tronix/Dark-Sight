@@ -56,7 +56,7 @@ if not raw_format:
 
 if not inc_therm:
     save_dir = save_dir + "without_therm/"
-    checkpoint_dir = checkpoint_dir + "without_therm"
+    checkpoint_dir = checkpoint_dir + "without_therm/"
 
 try:
     os.makedirs(save_dir)
@@ -104,7 +104,9 @@ for epoch in range(epoch_loaded, epoch_loaded + epochs):
 
         """saving results"""
         if i % batch_size == 1 and epoch % error_freq == 1:
-            print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2))
+            print(
+                "epoch: %d, index: %d loss: %.3f" % (epoch + 1, i + 1, running_loss / 2)
+            )
             running_loss = 0.0
             f, (ax1, ax2, ax3) = plt.subplots(1, 3)
             ax1.imshow(outputs.detach().numpy()[0])
@@ -115,31 +117,31 @@ for epoch in range(epoch_loaded, epoch_loaded + epochs):
                 ][:, :, :3]
             )
 
-            print(
-                "input shape: ",
-                torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2)
-                .numpy()[0]
-                .shape,
-                "min: ",
-                torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2).min(
-                    1, keepdim=True
-                )[0],
-                "max: ",
-                torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2).max(
-                    1, keepdim=True
-                )[0],
-            )
+            # print(
+            #     "input shape: ",
+            #     torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2)
+            #     .numpy()[0]
+            #     .shape,
+            #     "min: ",
+            #     torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2).min(
+            #         1, keepdim=True
+            #     )[0],
+            #     "max: ",
+            #     torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2).max(
+            #         1, keepdim=True
+            #     )[0],
+            # )
 
-            print(
-                "prediction shape: ",
-                outputs.detach().numpy()[0].shape,
-                "min: ",
-                outputs.min(1, keepdim=True)[0],
-                "max: ",
-                outputs.max(1, keepdim=True)[0],
-            )
+            # print(
+            #     "prediction shape: ",
+            #     outputs.detach().numpy()[0].shape,
+            #     "min: ",
+            #     outputs.min(1, keepdim=True)[0],
+            #     "max: ",
+            #     outputs.max(1, keepdim=True)[0],
+            # )
 
-            plt.savefig(save_dir + "epoch{}.png".format(epoch + 1))
+            plt.savefig(save_dir + "epoch{}_index{}.png".format(epoch + 1, i + 1))
 
         """saving checkpoints"""
         if i % batch_size == 1 and epoch % checkpoint_freq == 1:
@@ -154,7 +156,10 @@ for epoch in range(epoch_loaded, epoch_loaded + epochs):
                 checkpoint_dir + str(int(epoch / checkpoint_freq) + 1) + ".tar",
             )
 
-            print("checkpoint %d.tar saved." % (int(epoch / checkpoint_freq) + 1))
+            print(
+                "checkpoint %d_%d.tar saved."
+                % (int(epoch / checkpoint_freq) + 1, i + 1)
+            )
 
 
 print("Finished Training")
