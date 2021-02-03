@@ -5,6 +5,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
+import numpy as np
+import os
 
 
 class laviUnet(nn.Module):
@@ -119,3 +122,25 @@ class laviUnet(nn.Module):
     def lrelu(self, x):
         outt = torch.max(0.2 * x, x)
         return outt
+
+
+if __name__ == "__main__":
+    img_dir = "/home/arvinth/Pictures/dp.jpg"
+    img = plt.imread(img_dir)
+    model = laviUnet(10, inc_therm=False, raw_format=False)
+    W = img.shape[1]
+    H = img.shape[0]
+    # xx = np.random.randint(0, )
+    # yy = np.random.randint(0, H)
+    xx = 0
+    yy = 0
+    ps = 512
+    img = img[yy : yy + ps, xx : xx + ps, :]
+    img = np.float32(np.expand_dims(img, axis=0) / 255.0)
+    img = torch.tensor(img)
+    img = torch.transpose(img, 1, 3)
+    print("input shape", img.shape)
+    output = model(img)
+    print(output.shape)
+    plt.imshow(torch.transpose(img, 1, 3).detach().numpy()[0])
+    plt.show()
