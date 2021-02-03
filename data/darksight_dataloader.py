@@ -177,6 +177,8 @@ class ConcatTherm(object):
     Returns:
             {input_sample, output_sample}:input_sample is concatenation of short_exposure and thermal response
     """
+    def __init__(self, inc_therm=True):
+        self.inc_therm = inc_therm
 
     def __call__(self, sample):
 
@@ -186,16 +188,17 @@ class ConcatTherm(object):
             sample["thermal_response"],
         )
         input_sample = np.transpose(short_exp, (2, 0, 1))
-        input_sample = np.append(input_sample, np.expand_dims(therm, axis=0), axis=0)
+        if(self.inc_therm):
+            input_sample = np.append(input_sample, np.expand_dims(therm, axis=0), axis=0)
         return {"input_sample": input_sample, "output_sample": long_exp}
 
 
-def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
+def my_transform( inc_therm=True, train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
     transform = []
     transform.append(MatchSize(cam_shape, therm_shape))
     transform.append(RandomCrop())
     transform.append(RandomFlip())
-    transform.append(ConcatTherm())
+    transform.append(ConcatTherm(inc_therm))
     return transform
 
 
@@ -205,10 +208,10 @@ class DarkSighDataLoader:
         Returns:
             dataloader 
     """
-    def __init__(self):
+    def __init__(self, inc_therm=True):
         self.dataset_dir = "./dataset/"
         self.transformed_dataset = DarkSightDataset(
-            self.dataset_dir, transform=my_transform(True)
+            self.dataset_dir, transform=my_transform(inc_therm=inc_therm)
         )
         self.data = list(self.transformed_dataset)
 
