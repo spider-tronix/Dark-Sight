@@ -49,6 +49,14 @@ for epoch in range(epochs):
             ax1.imshow(outputs.detach().numpy()[0])
             ax2.imshow(gt.detach().numpy()[0])
             ax3.imshow(inputs.detach().transpose(inputs, 1, 3).numpy()[0])
+
+            os.chdir('./')
+            try:
+                os.makedirs('./results/augmentation')
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
+
             plt.savefig("./results/lavi_unet_results/epoch{}.png".format(epoch + 1))
 
 

@@ -10,6 +10,8 @@ from PIL import Image, ImageOps
 from torch.nn import ReplicationPad2d
 import tensorflow as tf
 import sys
+import os
+import errno
 
 sys.path.insert(1, "./")
 
@@ -225,5 +227,13 @@ if __name__ == "__main__":
 
         plt.figure()
         plt.imshow(sample_img.detach().numpy()[0][:, :, :3])
+        
+        os.chdir('./')
+        try:
+            os.makedirs('./results/augmentation')
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
         plt.savefig("./results/augmentation/img{}.png".format(i + 1))
         plt.show()
