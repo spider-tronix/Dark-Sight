@@ -1,6 +1,7 @@
 # OM NAMO NARAYANA
 import numpy as np
 import torch.optim as optim
+import torch
 import torch.nn as nn
 import sys
 from torch.utils.data import DataLoader
@@ -12,11 +13,12 @@ batch_size = 2
 
 sys.path.insert(1, "./")
 from DarkNet.models.sid_unet import sidUnet
+from DarkNet.models.lavi_unet import laviUnet
 from data.darksight_dataloader import DarkSighDataLoader
 
 trainloader = DarkSighDataLoader().load(batch_size=batch_size)
 
-model = sidUnet()
+model = laviUnet()
 criterion = nn.L1Loss()
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
@@ -30,9 +32,12 @@ for epoch in range(epochs):
     for i, data in enumerate(trainloader, 0):
         inputs, gt = data
         optimizer.zero_grad()
-
+        print('gt.shape:', gt.shape)
         # forward + backward + optimize
         outputs = model(inputs)
+        outputs = torch.transpose(outputs, 1, 3)
+        outputs = torch.transpose(outputs, 1, 2)
+        print('output.shape', outputs.shape)
         loss = criterion(outputs, gt)
         loss.backward()
         optimizer.step()
@@ -43,7 +48,7 @@ for epoch in range(epochs):
             f, (ax1, ax2) = plt.subplots(1, 2)
             ax1.imshow(outputs.detach().numpy()[0])
             ax2.imshow(gt.detach().numpy()[0])
-            plt.savefig("./results/epoch{}.png".format(epoch + 1))
+            plt.savefig("./results/lavi_unet_results/epoch{}.png".format(epoch + 1))
 
 
 print("Finished Training")

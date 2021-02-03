@@ -198,6 +198,11 @@ def my_transform(train=True, cam_shape=(2010, 3012), therm_shape=(32, 24)):
 
 
 class DarkSighDataLoader:
+    """
+    load(self, batch_size=1, shuffle=True):
+        Returns:
+            dataloader 
+    """
     def __init__(self):
         self.dataset_dir = "./dataset/"
         self.transformed_dataset = DarkSightDataset(

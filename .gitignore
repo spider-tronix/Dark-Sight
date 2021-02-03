@@ -8,3 +8,4 @@ ignore
 .pylintrc
 dataset/
 results/*
+Arvinth/

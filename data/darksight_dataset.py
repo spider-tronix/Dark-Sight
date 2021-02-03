@@ -35,7 +35,6 @@ def pack_raw(raw, blevel=512):
     img_shape = im.shape
     H = img_shape[0]
     W = img_shape[1]
-
     out = np.concatenate(
         (
             im[0:H:2, 0:W:2, :],
