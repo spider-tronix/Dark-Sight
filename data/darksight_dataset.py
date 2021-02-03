@@ -48,17 +48,24 @@ def pack_raw(raw, blevel=512):
 
 
 class PreprocessRaw(object):
+    def __init__(self, raw_format):
+        self.raw_format = raw_format
+
     def __call__(self, sample):
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
             sample["thermal_response"],
         )
-        long_exp = long_exp.postprocess(
-            use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16
-        )
-        long_exp = np.float32(long_exp / 65535.0)
-        short_exp = pack_raw(short_exp)
+        if self.raw_format:
+            long_exp = long_exp.postprocess(
+                use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16
+            )
+            long_exp = np.float32(long_exp / 65535.0)
+            short_exp = pack_raw(short_exp)
+        else:
+            long_exp = np.float32(long_exp / 255.0)
+            short_exp = np.float32(short_exp / 255.0)
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
@@ -78,21 +85,24 @@ class DarkSightDataset(Dataset):
         """
         self.raw_format = raw_format
         self.transform = []
-        if(raw_format):
-            self.transform.append(PreprocessRaw())
+        self.transform.append(PreprocessRaw(raw_format=raw_format))
         if transform:
             for t in transform:
                 self.transform.append(t)
         self.transform = transforms.Compose(self.transform)
 
-        if(raw_format):
-            extension = '.CR3'
+        if raw_format:
+            extension = ".CR3"
         else:
-            extension = '.JPG'
+            extension = ".JPG"
 
         self.root_dir = root_dir
-        self.long_exp_list = glob.glob(root_dir + "**/*raw*long*"+extension, recursive=True)
-        self.short_exp_list = glob.glob(root_dir + "**/*raw*short*"+extension, recursive=True)
+        self.long_exp_list = glob.glob(
+            root_dir + "**/*raw*long*" + extension, recursive=True
+        )
+        self.short_exp_list = glob.glob(
+            root_dir + "**/*raw*short*" + extension, recursive=True
+        )
         self.therm_list = glob.glob(root_dir + "**/temp.jpg", recursive=True)
         print("no. of datapoints", len(self.long_exp_list))
         assert len(self.long_exp_list) == len(self.short_exp_list) and len(
@@ -106,7 +116,7 @@ class DarkSightDataset(Dataset):
         print("data index", idx)
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        if(self.raw_format):
+        if self.raw_format:
             long_exp = rawpy.imread(self.long_exp_list[idx])
             short_exp = rawpy.imread(self.short_exp_list[idx])
         else:
@@ -119,10 +129,8 @@ class DarkSightDataset(Dataset):
             "short_exposure": short_exp,  # change to long_exp for debugging augmentation
             "thermal_response": therm,
         }
-        print(len(sample))
 
         sample = self.transform(sample)
-        print(len(sample))
 
         try:
             return [

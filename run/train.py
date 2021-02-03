@@ -32,7 +32,8 @@ load_weights = True
 # change the directory for required model
 checkpoint_dir = "./DarkNet/checkpoints/lavi_unet/"
 save_dir = "./results/lavi_unet_results/"
-model = laviUnet(inc_therm=inc_therm)
+raw_format = False
+model = laviUnet(inc_therm=inc_therm, raw_format=raw_format)
 plot_freq = 10
 error_freq = 5
 checkpoint_freq = 25
@@ -49,19 +50,13 @@ criterion = nn.L1Loss()
 
 """creating necessary directories"""
 
-if not load_weights or os.listdir(checkpoint_dir) == []:
-    if load_weights:
-        print("no models saved")
-else:
-    checkpoint = torch.load(checkpoint_dir + os.listdir(checkpoint_dir)[-1])
-    model.load_state_dict(checkpoint["model_state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-    epoch_loaded = checkpoint["epoch"]
-    print("model loaded")
-
+if not raw_format:
+    save_dir = save_dir + "jpg_format/"
+    checkpoint_dir = checkpoint_dir + "jpg_format/"
 
 if not inc_therm:
-    save_dir = "./results/without_therm/normalized/"
+    save_dir = save_dir + "without_therm/"
+    checkpoint_dir = checkpoint_dir + "without_therm"
 
 try:
     os.makedirs(save_dir)
@@ -77,7 +72,20 @@ except OSError as e:
     if e.errno != errno.EEXIST:
         raise
 
-trainloader = DarkSighDataLoader(inc_therm=inc_therm).load(batch_size=batch_size)
+if not load_weights or os.listdir(checkpoint_dir) == []:
+    if load_weights:
+        print("no models saved")
+    epoch_loaded = 0
+else:
+    checkpoint = torch.load(checkpoint_dir + os.listdir(checkpoint_dir)[-1])
+    model.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    epoch_loaded = checkpoint["epoch"]
+    print("model loaded")
+
+trainloader = DarkSighDataLoader(inc_therm=inc_therm, raw_format=raw_format).load(
+    batch_size=batch_size
+)
 
 
 for epoch in range(epoch_loaded, epoch_loaded + epochs):
@@ -104,8 +112,17 @@ for epoch in range(epoch_loaded, epoch_loaded + epochs):
             ax3.imshow(
                 torch.transpose(torch.transpose(inputs.detach(), 1, 3), 1, 2).numpy()[
                     0
-                ][:, :, 3]
+                ][:, :, :3]
             )
+
+            # print(
+            #     "prediction shape: ",
+            #     outputs.detach().numpy()[0].shape,
+            #     "min: ",
+            #     outputs.min(1, keepdim=True)[0],
+            #     "max: ",
+            #     outputs.max(1, keepdim=True)[0],
+            # )
 
             plt.savefig(save_dir + "epoch{}.png".format(epoch + 1))
 

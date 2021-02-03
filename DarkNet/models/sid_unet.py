@@ -14,12 +14,18 @@ import warnings
 
 
 class sidUnet(nn.Module):
-    def __init__(self, inc_therm=True):
+    def __init__(self, inc_therm=True, raw_format=True):
         super(sidUnet, self).__init__()
+
+
+        self.raw_format = raw_format
         if inc_therm:
             fchannel = 5
         else:
             fchannel = 4
+        if not raw_format:
+            fchannel = fchannel - 1
+        
         self.conv1_1 = nn.Conv2d(fchannel, 32, 3, padding=(1, 1))
         self.conv1_2 = nn.Conv2d(32, 32, 3, padding=(1, 1))
 

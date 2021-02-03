@@ -8,12 +8,15 @@ import torch.nn.functional as F
 
 
 class laviUnet(nn.Module):
-    def __init__(self, num_classes=10, inc_therm=True):
+    def __init__(self, num_classes=10, inc_therm=True, raw_format=True):
         super(laviUnet, self).__init__()
+        self.raw_format = raw_format
         if inc_therm:
             fchannel = 5
         else:
             fchannel = 4
+        if not raw_format:
+            fchannel = fchannel - 1
         # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.conv1_1 = nn.Conv2d(fchannel, 32, kernel_size=3, stride=1, padding=1)
         self.conv1_2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
@@ -49,8 +52,10 @@ class laviUnet(nn.Module):
         self.upv9 = nn.ConvTranspose2d(64, 32, 2, stride=2)
         self.conv9_1 = nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1)
         self.conv9_2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-
-        self.conv10_1 = nn.Conv2d(32, 12, kernel_size=1, stride=1)
+        if raw_format:
+            self.conv10_1 = nn.Conv2d(32, 12, kernel_size=1, stride=1)
+        else:
+            self.conv10_1 = nn.Conv2d(32, 3, kernel_size=1, stride=1)
 
     def forward(self, x):
         conv1 = self.lrelu(self.conv1_1(x))
@@ -93,7 +98,11 @@ class laviUnet(nn.Module):
         conv9 = self.lrelu(self.conv9_2(conv9))
 
         conv10 = self.conv10_1(conv9)
-        out = nn.functional.pixel_shuffle(conv10, 2)
+        if self.raw_format:
+            out = nn.functional.pixel_shuffle(conv10, 2)
+        else:
+            out = conv10
+        # print(out.shape)
         out -= out.min(1, keepdim=True)[0]
         out /= out.max(1, keepdim=True)[0]
         return out

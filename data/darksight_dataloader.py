@@ -112,8 +112,10 @@ class RandomCrop(object):
             yy = np.random.randint(self.hbuf, H - ps - self.hbuf)
             short_exp = short_exp[yy : yy + ps, xx : xx + ps, :]
             therm = therm.crop((xx, yy, xx + ps, yy + ps))
-            if(self.raw_format):
-                long_exp = long_exp[yy * 2 : yy * 2 + ps * 2, xx * 2 : xx * 2 + ps * 2, :]
+            if self.raw_format:
+                long_exp = long_exp[
+                    yy * 2 : yy * 2 + ps * 2, xx * 2 : xx * 2 + ps * 2, :
+                ]
             else:
                 long_exp = long_exp[yy : yy + ps, xx : xx + ps, :]
             cnt = 0
@@ -201,7 +203,11 @@ class ConcatTherm(object):
 
 
 def my_transform(
-    inc_therm=True, train=True, cam_shape=(2010, 3012), therm_shape=(32, 24), raw_format=True
+    inc_therm=True,
+    train=True,
+    cam_shape=(2010, 3012),
+    therm_shape=(32, 24),
+    raw_format=True,
 ):
     transform = []
     transform.append(MatchSize(cam_shape, therm_shape))
@@ -218,13 +224,14 @@ class DarkSighDataLoader:
             dataloader
     """
 
-    def __init__(self, inc_therm=True, raw_format=False):
+    def __init__(self, inc_therm=True, raw_format=True):
         self.dataset_dir = "./dataset/"
         self.transformed_dataset = DarkSightDataset(
-            self.dataset_dir, transform=my_transform(inc_therm=inc_therm, raw_format=raw_format), raw_format=raw_format
+            self.dataset_dir,
+            transform=my_transform(inc_therm=inc_therm, raw_format=raw_format),
+            raw_format=raw_format,
         )
         self.data = list(self.transformed_dataset)
-        print(self.data)
 
     def load(self, batch_size=1, shuffle=True):
         dataloader = DataLoader(self.data, batch_size, shuffle=shuffle)
