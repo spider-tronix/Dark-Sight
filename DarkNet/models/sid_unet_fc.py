@@ -81,7 +81,7 @@ class sidUnet(nn.Module):
         out /= out.max(1, keepdim=True)[0]
 
         # print(out.shape)
-        
+
         return out
 
 

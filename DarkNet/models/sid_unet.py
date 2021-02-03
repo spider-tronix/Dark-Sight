@@ -14,9 +14,13 @@ import warnings
 
 
 class sidUnet(nn.Module):
-    def __init__(self):
+    def __init__(self, inc_therm=True):
         super(sidUnet, self).__init__()
-        self.conv1_1 = nn.Conv2d(5, 32, 3, padding=(1, 1))
+        if inc_therm:
+            fchannel = 5
+        else:
+            fchannel = 4
+        self.conv1_1 = nn.Conv2d(fchannel, 32, 3, padding=(1, 1))
         self.conv1_2 = nn.Conv2d(32, 32, 3, padding=(1, 1))
 
         self.conv2_1 = nn.Conv2d(32, 64, 3, padding=(1, 1))
@@ -49,7 +53,6 @@ class sidUnet(nn.Module):
         self.conv9_1 = nn.Conv2d(64, 32, 3, padding=(1, 1))
         self.conv9_2 = nn.Conv2d(32, 32, 3, padding=(1, 1))
 
-
         self.up_10 = nn.ConvTranspose2d(32, 5, 2, stride=(2, 2))
         self.conv10_1 = nn.Conv2d(10, 10, 3, padding=(1, 1))
         self.conv10_1 = nn.Conv2d(10, 10, 3, padding=(1, 1))
@@ -57,10 +60,9 @@ class sidUnet(nn.Module):
         self.up_11 = nn.ConvTranspose2d(10, 3, 2, stride=(2, 2))
         self.conv_11_1 = nn.Conv2d(3, 3, 3, padding=(1, 1))
 
-
     def forward(self, x):
 
-        fig, ax = plt.subplots(1, 11, figsize = (20, 20))
+        fig, ax = plt.subplots(1, 11, figsize=(20, 20))
 
         conv1 = self.pool(F.relu(self.conv1_2(F.relu(self.conv1_1(x)))))
         conv2 = self.pool(F.relu(self.conv2_2(F.relu(self.conv2_1(conv1)))))
@@ -68,8 +70,6 @@ class sidUnet(nn.Module):
         conv3 = self.pool(F.relu(self.conv3_2(F.relu(self.conv3_1(conv2)))))
         conv4 = self.pool(F.relu(self.conv4_2(F.relu(self.conv4_1(conv3)))))
         conv5 = self.pool(F.relu(self.conv5_2(F.relu(self.conv5_1(conv4)))))
-
-        
 
         up6 = torch.cat((self.up_6(conv5), conv4), dim=1)
         conv6 = F.relu(self.conv6_2(F.relu(self.conv6_1(up6))))
@@ -83,7 +83,7 @@ class sidUnet(nn.Module):
         conv10 = F.relu(self.conv10_1(up10))
         up11 = self.up_11(conv10)
         conv11 = self.conv_11_1(up11)
-        
+
         out = conv11
         out = torch.transpose(out, 1, 3)  # 0, 2, 1, 3
         # out = torch.transpose(out, 2, 3)  # 0, 2, 3, 1
@@ -103,7 +103,7 @@ class sidUnet(nn.Module):
         ax[9].imshow(conv10.detach().numpy()[0][:3, :, :].transpose(1, 2, 0))
         ax[10].imshow(conv11.detach().numpy()[0][:3, :, :].transpose(1, 2, 0))
         plt.show()
-        
+
         return out
 
 
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     for i in range(1):
         # tin = torch.rand(1, 5, 512, 512)/1e5
         tin = torch.ones_like(torch.empty(1, 5, 512, 512))
-        output=model.forward(tin)
+        output = model.forward(tin)
         print(output.shape)
         fig, [ax1, ax2] = plt.subplots(1, 2)
         ax1.imshow(tin.detach().numpy()[0][:3, :, :].transpose(1, 2, 0))
