@@ -6,4 +6,7 @@ __pycache__
 .ipynb_checkpoints
 ignore
 .pylintrc
-dataset/
+dataset/*
+results/*
+Arvinth/
+DarkNet/checkpoints

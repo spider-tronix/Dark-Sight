@@ -6,6 +6,7 @@ from time import sleep
 
 import pygame
 from pygame.locals import *
+
 # noinspection PyUnresolvedReferences
 from sh import gphoto2 as gp
 
@@ -14,11 +15,11 @@ from thermal_trigger import ThermalCamera
 
 
 def killGphoto2Process():
-    p = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE)
+    p = subprocess.Popen(["ps", "-A"], stdout=subprocess.PIPE)
     out, err = p.communicate()
 
     for line in out.splitlines():
-        if b'gvfsd-gphoto2' in line:
+        if b"gvfsd-gphoto2" in line:
             pid = int(line.split(None, 1)[0])
             os.kill(pid, signal.SIGKILL)
 
@@ -26,8 +27,8 @@ def killGphoto2Process():
 def createSaveFolder(save_location):
     try:
         os.makedirs(save_location)
-        with open("/home/syzygianinfern0/sambashare/timestamp.txt", 'w') as handler:
-            handler.write('/'.join(save_location.split('/')[4:6]))
+        with open("/home/syzygianinfern0/sambashare/timestamp.txt", "w") as handler:
+            handler.write("/".join(save_location.split("/")[4:6]))
             print("Timstamp is ready")
     except:
         print("Failed to create new directory.")
@@ -57,7 +58,7 @@ def main():
     pygame.init()
     pygame.font.init()
     display = pygame.display.set_mode((320, 240))
-    pygame.display.set_caption('Thermal Cam')
+    pygame.display.set_caption("Thermal Cam")
     pygame.mouse.set_visible(True)
     while True:
         for event in pygame.event.get():
@@ -85,7 +86,7 @@ def main():
                 exit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     picID = "Cannon200DShots"
     shot_time = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 

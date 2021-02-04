@@ -114,9 +114,10 @@ def print_arr(arr):
 def arr2heatmap(arr):
 
     # ax = cv2.applyColorMap( (arr * cv2.getTrackbarPos("Scale", "Trackbar")/122).astype('uint8'), cv2.COLORMAP_JET)
-    ax = cv2.applyColorMap( (arr * 2.245).astype('uint8'), cv2.COLORMAP_JET)
+    ax = cv2.applyColorMap((arr * 2.245).astype("uint8"), cv2.COLORMAP_JET)
 
     return ax
+
 
 def thermal_process():
     global op_thermal
@@ -134,7 +135,7 @@ def thermal_process():
             op_thermal[:] = list(np.concatenate(stdout2arr(data)))
             # print(op)
         except Exception as e:
-            #cam.revive_cam()
+            # cam.revive_cam()
             print(e)
             print("Consider restarting PI!!!!!")
 
@@ -188,4 +189,3 @@ if __name__ == "__main__":
     picam = PiCamera()
 
     main()
-
