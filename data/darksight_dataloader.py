@@ -231,10 +231,9 @@ class DarkSighDataLoader:
             transform=my_transform(inc_therm=inc_therm, raw_format=raw_format),
             raw_format=raw_format,
         )
-        self.data = list(self.transformed_dataset)
 
     def load(self, batch_size=1, shuffle=True):
-        dataloader = DataLoader(self.data, batch_size, shuffle=shuffle)
+        dataloader = DataLoader(self.transformed_dataset, batch_size, shuffle=shuffle)
         return dataloader
 
 

@@ -37,7 +37,8 @@ model = laviUnet(inc_therm=inc_therm, raw_format=raw_format)
 plot_freq = 10
 error_freq = 5
 checkpoint_freq = 25
-dataset_dir = input("enter path for dataset")
+# dataset_dir = input("enter path for dataset")
+dataset_dir = "./dataset/"
 
 epochs = 500
 lr = 1e-4
