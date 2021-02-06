@@ -223,28 +223,28 @@ def my_transform(
     return transform
 
 
-class DarkSighDataLoader:
+def DarkSighDataLoader(
+    inc_therm=True,
+    raw_format=True,
+    dataset_dir="./dataset/",
+    batch_size=1,
+    shuffle=True,
+):
     """
     load(self, batch_size=1, shuffle=True):
         Returns:
             dataloader
     """
-
-    def __init__(self, inc_therm=True, raw_format=True, dataset_dir="./dataset/"):
-        self.dataset_dir = dataset_dir
-        self.transformed_dataset = DarkSightDataset(
-            self.dataset_dir,
-            transform=my_transform(inc_therm=inc_therm, raw_format=raw_format),
-            raw_format=raw_format,
-        )
-
-    def load(self, batch_size=1, shuffle=True):
-        dataloader = DataLoader(self.transformed_dataset, batch_size, shuffle=shuffle)
-        return dataloader
+    transformed_dataset = DarkSightDataset(
+        dataset_dir,
+        transform=my_transform(inc_therm=inc_therm, raw_format=raw_format),
+        raw_format=raw_format,
+    )
+    return DataLoader(transformed_dataset, batch_size, shuffle=shuffle)
 
 
 if __name__ == "__main__":
-    data = DarkSighDataLoader().load()
+    data = DarkSighDataLoader()
     data = iter(data)
     nsamples = 1
     for i in range(nsamples):

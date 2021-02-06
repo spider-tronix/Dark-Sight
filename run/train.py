@@ -86,8 +86,11 @@ else:
     print("model loaded")
 
 trainloader = DarkSighDataLoader(
-    inc_therm=inc_therm, raw_format=raw_format, dataset_dir=dataset_dir
-).load(batch_size=batch_size)
+    inc_therm=inc_therm,
+    raw_format=raw_format,
+    dataset_dir=dataset_dir,
+    batch_size=batch_size,
+)
 
 
 for epoch in range(epoch_loaded, epoch_loaded + epochs):
