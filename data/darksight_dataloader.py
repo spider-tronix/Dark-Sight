@@ -12,6 +12,8 @@ import tensorflow as tf
 import sys
 import os
 import errno
+import random
+from time import time
 
 sys.path.insert(1, "./")
 
@@ -50,7 +52,7 @@ class MatchSize(object):
         self.shape = cam_shape
 
     def __call__(self, sample):
-
+        pre_match_size = time()
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
@@ -64,7 +66,7 @@ class MatchSize(object):
 
         # input and output are PIL image
         therm = transforms.ToPILImage()(therm_tensor.squeeze_(0))
-
+        print("time taken for matching size %.3f" % (time() - pre_match_size))
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
@@ -95,8 +97,8 @@ class RandomCrop(object):
         self.hbuf = hbuf
         self.wbuf = wbuf
 
-    def __call__(self, sample, color_percent=50):
-
+    def __call__(self, sample, color_percent=50, random_samples=2000):
+        pre_crop = time()
         iter_times = 0
         while True:
             iter_times += 1
@@ -118,18 +120,19 @@ class RandomCrop(object):
                 ]
             else:
                 long_exp = long_exp[yy : yy + ps, xx : xx + ps, :]
-            cnt = 0
-            for i in range(0, 512):
-                for j in range(0, 512):
-                    r = long_exp[i][j][0] * 255
-                    g = long_exp[i][j][1] * 255
-                    b = long_exp[i][j][2] * 255
-                    if r < 40 and g < 40 and b < 40:
-                        cnt += 1
             # color_precent added
-            if cnt < ((512 * 512) * color_percent / 100) or iter_times > 10:
-                print("sampled on {} iteration".format(iter_times))
+            if (
+                np.sum(
+                    np.where(
+                        np.random.choice(np.array(long_exp).flatten(), random_samples)
+                        < 40
+                    )
+                )
+                < random_samples * color_percent / 100
+                or iter_times > 100
+            ):
                 break
+        print("time taken for cropping %.3f" % (time() - pre_crop))
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
@@ -148,7 +151,7 @@ class RandomFlip(object):
     """
 
     def __call__(self, sample):
-
+        pre_flip = time()
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
@@ -167,6 +170,7 @@ class RandomFlip(object):
             short_exp = np.transpose(short_exp, (1, 0, 2))
             therm = np.transpose(therm, (1, 0))
             long_exp = np.transpose(long_exp, (1, 0, 2))
+        print("time taken for flipping %.3f" % (time() - pre_flip))
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
@@ -188,6 +192,7 @@ class ConcatTherm(object):
         self.inc_therm = inc_therm
 
     def __call__(self, sample):
+        pre_concat = time()
 
         long_exp, short_exp, therm = (
             sample["long_exposure"],
@@ -199,6 +204,7 @@ class ConcatTherm(object):
             input_sample = np.append(
                 input_sample, np.expand_dims(therm, axis=0), axis=0
             )
+        print("time taken for concatenation %.3f" % (time() - pre_concat))
         return {"input_sample": input_sample, "output_sample": long_exp}
 
 
