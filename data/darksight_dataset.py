@@ -12,7 +12,6 @@ from torch.nn import ReplicationPad2d
 import tensorflow as tf
 import sys
 import torch
-from time import time
 
 sys.path.insert(1, "./")
 
@@ -27,20 +26,17 @@ warnings.filterwarnings("ignore")
 
 
 def pack_raw(raw, blevel=512):
-    pre_pack_raw = time()
     # pack Bayer image to 4 channels
     im = raw.raw_image_visible.astype(np.float32)
-    print("time for converting raw to numpy: %.3f" % (time() - pre_pack_raw))
     # subtract the black level
-    # im = np.maximum(im - blevel, 0) / (16383 - blevel)
-    im = im / 16383
+    im = np.maximum(im - blevel, 0) / (16383 - blevel)
+    # im = im / 16383
 
     im = np.expand_dims(im, axis=2)
     img_shape = im.shape
     H = img_shape[0]
     W = img_shape[1]
 
-    pre_slice = time()
     out = np.concatenate(
         (
             im[0:H:2, 0:W:2, :],
@@ -50,8 +46,6 @@ def pack_raw(raw, blevel=512):
         ),
         axis=2,
     )
-    print("time taken for slicing: %.3f" % (time() - pre_slice))
-    print("time taken for packraw: %.3f" % (time() - pre_pack_raw))
     return out
 
 
@@ -60,20 +54,16 @@ class PreprocessRaw(object):
         self.raw_format = raw_format
 
     def __call__(self, sample):
-        pre_process_raw = time()
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
             sample["thermal_response"],
         )
         if self.raw_format:
-            post_process_raw = time()
             long_exp = long_exp.postprocess(
                 use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16
             )
-            print(
-                "time taken for inbuilt postprocess %.3f" % (time() - post_process_raw)
-            )
+
 
             long_exp = np.float32(long_exp / 65535.0)
             short_exp = pack_raw(short_exp)
@@ -81,7 +71,6 @@ class PreprocessRaw(object):
             long_exp = np.float32(long_exp / 255.0)
             short_exp = np.float32(short_exp / 255.0)
 
-        print("time taken for preprocess raw %.3f" % (time() - pre_process_raw))
 
         return {
             "long_exposure": long_exp,
@@ -166,30 +155,6 @@ if __name__ == "__main__":
     transformed_dataset = DarkSightDataset(dataset_dir, raw_format=False)
     data = iter(transformed_dataset)
     next(data)
-    # print(data[0])
     # debugging
+    # print(data[0])
 
-    # long_shot_cam = glob.glob(long_shots_dir + "**/*long*.CR3", recursive=True)
-    # short_shot_cam = glob.glob(long_shots_dir + "**/*short*.CR3", recursive=True)
-    # therm = glob.glob(long_shots_dir + "**/*temp.jpg", recursive=True)
-    """dictionary format
-
-    print('dataset1: ', data[0]['short_exposure'].shape,
-        data[0]['thermal_response'].shape)
-    # print('dataset2: ', data[1]['short_exposure'].shape,
-    #       data[1]['thermal_response'].shape)
-    # data[0]['thermal_response'].show()
-    print(np.max(data[0]['long_exposure']))
-    plt.figure()
-    plt.imshow(data[0]['long_exposure'])
-    plt.figure()
-    plt.imshow(data[0]['thermal_response'])
-    plt.figure()
-    plt.imshow(data[0]['short_exposure'][:, :, :3])
-    print(data[0]['short_exposure'][:, :, 1:4].shape)
-    plt.show()
-    print(data[0]['thermal_response'][0][20:30])
-
-    """
-
-    """tensor format"""

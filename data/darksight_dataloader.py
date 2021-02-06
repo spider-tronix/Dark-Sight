@@ -13,7 +13,6 @@ import sys
 import os
 import errno
 import random
-from time import time
 
 sys.path.insert(1, "./")
 
@@ -52,7 +51,6 @@ class MatchSize(object):
         self.shape = cam_shape
 
     def __call__(self, sample):
-        pre_match_size = time()
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
@@ -66,7 +64,6 @@ class MatchSize(object):
 
         # input and output are PIL image
         therm = transforms.ToPILImage()(therm_tensor.squeeze_(0))
-        print("time taken for matching size %.3f" % (time() - pre_match_size))
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
@@ -98,7 +95,6 @@ class RandomCrop(object):
         self.wbuf = wbuf
 
     def __call__(self, sample, color_percent=50, random_samples=2000):
-        pre_crop = time()
         iter_times = 0
         while True:
             iter_times += 1
@@ -121,23 +117,30 @@ class RandomCrop(object):
             else:
                 long_exp = long_exp[yy : yy + ps, xx : xx + ps, :]
             # color_precent added
+            # print(np.random.choice(np.array(long_exp), random_samples).min(axis=2))
             if (
                 np.sum(
                     np.where(
                         np.random.choice(np.array(long_exp).flatten(), random_samples)
-                        < 40
+                        < 15/255, 1, 0
                     )
                 )
                 < random_samples * color_percent / 100
-                or iter_times > 100
+                or iter_times > 1000
             ):
+                print(np.sum(
+                    np.where(
+                        np.random.choice(np.array(long_exp).flatten(), random_samples)
+                        < 20/255, 1, 0
+                    )
+                ), iter_times)
                 break
-        print("time taken for cropping %.3f" % (time() - pre_crop))
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
             "thermal_response": therm,
         }
+
 
 
 class RandomFlip(object):
@@ -151,7 +154,6 @@ class RandomFlip(object):
     """
 
     def __call__(self, sample):
-        pre_flip = time()
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
@@ -170,7 +172,6 @@ class RandomFlip(object):
             short_exp = np.transpose(short_exp, (1, 0, 2))
             therm = np.transpose(therm, (1, 0))
             long_exp = np.transpose(long_exp, (1, 0, 2))
-        print("time taken for flipping %.3f" % (time() - pre_flip))
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
@@ -192,7 +193,6 @@ class ConcatTherm(object):
         self.inc_therm = inc_therm
 
     def __call__(self, sample):
-        pre_concat = time()
 
         long_exp, short_exp, therm = (
             sample["long_exposure"],
@@ -204,7 +204,6 @@ class ConcatTherm(object):
             input_sample = np.append(
                 input_sample, np.expand_dims(therm, axis=0), axis=0
             )
-        print("time taken for concatenation %.3f" % (time() - pre_concat))
         return {"input_sample": input_sample, "output_sample": long_exp}
 
 
@@ -246,13 +245,16 @@ def DarkSighDataLoader(
 if __name__ == "__main__":
     data = DarkSighDataLoader()
     data = iter(data)
-    nsamples = 1
+    nsamples = 2
+    f, ax = plt.subplots(nsamples, 2)
     for i in range(nsamples):
         sample_data = next(data)
+        sample_output = sample_data[1]
         sample_img = torch.transpose(torch.transpose(sample_data[0], 1, 3), 1, 2)
 
-        plt.figure()
-        plt.imshow(sample_img.detach().numpy()[0][:, :, :3])
+        print(sample_img.shape)
+        ax[i][0].imshow(sample_img.detach().numpy()[0][:, :, :3])
+        ax[i][1].imshow(sample_output.detach().numpy()[0])
 
         os.chdir("./")
         try:
@@ -261,5 +263,5 @@ if __name__ == "__main__":
             if e.errno != errno.EEXIST:
                 raise
 
-        plt.savefig("./results/augmentation/img{}.png".format(i + 1))
-        plt.show()
+        plt.savefig("./results/augmentation/img.png")
+    plt.show()
