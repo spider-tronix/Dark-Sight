@@ -9,4 +9,4 @@ ignore
 dataset/*
 results/*
 Arvinth/
-DarkNet/checkpoints
+DarkNet/checkpoints/*

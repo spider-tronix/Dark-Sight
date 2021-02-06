@@ -224,8 +224,8 @@ class DarkSighDataLoader:
             dataloader
     """
 
-    def __init__(self, inc_therm=True, raw_format=True):
-        self.dataset_dir = "./dataset/"
+    def __init__(self, inc_therm=True, raw_format=True, dataset_dir="./dataset/"):
+        self.dataset_dir = dataset_dir
         self.transformed_dataset = DarkSightDataset(
             self.dataset_dir,
             transform=my_transform(inc_therm=inc_therm, raw_format=raw_format),
