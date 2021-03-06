@@ -30,11 +30,13 @@ def pack_raw(raw, blevel=512):
     im = raw.raw_image_visible.astype(np.float32)
     # subtract the black level
     im = np.maximum(im - blevel, 0) / (16383 - blevel)
+    # im = im / 16383
 
     im = np.expand_dims(im, axis=2)
     img_shape = im.shape
     H = img_shape[0]
     W = img_shape[1]
+
     out = np.concatenate(
         (
             im[0:H:2, 0:W:2, :],
@@ -61,11 +63,15 @@ class PreprocessRaw(object):
             long_exp = long_exp.postprocess(
                 use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16
             )
+
+
             long_exp = np.float32(long_exp / 65535.0)
             short_exp = pack_raw(short_exp)
         else:
             long_exp = np.float32(long_exp / 255.0)
             short_exp = np.float32(short_exp / 255.0)
+
+
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
@@ -147,31 +153,8 @@ if __name__ == "__main__":
     # drive code
     dataset_dir = "./dataset/"
     transformed_dataset = DarkSightDataset(dataset_dir, raw_format=False)
-    data = list(transformed_dataset)
-    print(data[0])
+    data = iter(transformed_dataset)
+    next(data)
     # debugging
+    # print(data[0])
 
-    # long_shot_cam = glob.glob(long_shots_dir + "**/*long*.CR3", recursive=True)
-    # short_shot_cam = glob.glob(long_shots_dir + "**/*short*.CR3", recursive=True)
-    # therm = glob.glob(long_shots_dir + "**/*temp.jpg", recursive=True)
-    """dictionary format
-
-    print('dataset1: ', data[0]['short_exposure'].shape,
-        data[0]['thermal_response'].shape)
-    # print('dataset2: ', data[1]['short_exposure'].shape,
-    #       data[1]['thermal_response'].shape)
-    # data[0]['thermal_response'].show()
-    print(np.max(data[0]['long_exposure']))
-    plt.figure()
-    plt.imshow(data[0]['long_exposure'])
-    plt.figure()
-    plt.imshow(data[0]['thermal_response'])
-    plt.figure()
-    plt.imshow(data[0]['short_exposure'][:, :, :3])
-    print(data[0]['short_exposure'][:, :, 1:4].shape)
-    plt.show()
-    print(data[0]['thermal_response'][0][20:30])
-
-    """
-
-    """tensor format"""

@@ -37,6 +37,8 @@ model = laviUnet(inc_therm=inc_therm, raw_format=raw_format)
 plot_freq = 10
 error_freq = 5
 checkpoint_freq = 25
+# dataset_dir = input("enter path for dataset")
+dataset_dir = "./dataset/"
 
 epochs = 500
 lr = 1e-4
@@ -83,8 +85,11 @@ else:
     epoch_loaded = checkpoint["epoch"]
     print("model loaded")
 
-trainloader = DarkSighDataLoader(inc_therm=inc_therm, raw_format=raw_format).load(
-    batch_size=batch_size
+trainloader = DarkSighDataLoader(
+    inc_therm=inc_therm,
+    raw_format=raw_format,
+    dataset_dir=dataset_dir,
+    batch_size=batch_size,
 )
 
 

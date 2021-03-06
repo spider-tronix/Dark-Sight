@@ -12,6 +12,7 @@ import tensorflow as tf
 import sys
 import os
 import errno
+import random
 
 sys.path.insert(1, "./")
 
@@ -50,7 +51,6 @@ class MatchSize(object):
         self.shape = cam_shape
 
     def __call__(self, sample):
-
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
@@ -64,7 +64,6 @@ class MatchSize(object):
 
         # input and output are PIL image
         therm = transforms.ToPILImage()(therm_tensor.squeeze_(0))
-
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
@@ -95,8 +94,7 @@ class RandomCrop(object):
         self.hbuf = hbuf
         self.wbuf = wbuf
 
-    def __call__(self, sample, color_percent=50):
-
+    def __call__(self, sample, color_percent=50, random_samples=2000):
         iter_times = 0
         while True:
             iter_times += 1
@@ -118,23 +116,31 @@ class RandomCrop(object):
                 ]
             else:
                 long_exp = long_exp[yy : yy + ps, xx : xx + ps, :]
-            cnt = 0
-            for i in range(0, 512):
-                for j in range(0, 512):
-                    r = long_exp[i][j][0] * 255
-                    g = long_exp[i][j][1] * 255
-                    b = long_exp[i][j][2] * 255
-                    if r < 40 and g < 40 and b < 40:
-                        cnt += 1
             # color_precent added
-            if cnt < ((512 * 512) * color_percent / 100) or iter_times > 10:
-                print("sampled on {} iteration".format(iter_times))
+            # print(np.random.choice(np.array(long_exp), random_samples).min(axis=2))
+            if (
+                np.sum(
+                    np.where(
+                        np.random.choice(np.array(long_exp).flatten(), random_samples)
+                        < 15/255, 1, 0
+                    )
+                )
+                < random_samples * color_percent / 100
+                or iter_times > 1000
+            ):
+                print(np.sum(
+                    np.where(
+                        np.random.choice(np.array(long_exp).flatten(), random_samples)
+                        < 20/255, 1, 0
+                    )
+                ), iter_times)
                 break
         return {
             "long_exposure": long_exp,
             "short_exposure": short_exp,
             "thermal_response": therm,
         }
+
 
 
 class RandomFlip(object):
@@ -148,7 +154,6 @@ class RandomFlip(object):
     """
 
     def __call__(self, sample):
-
         long_exp, short_exp, therm = (
             sample["long_exposure"],
             sample["short_exposure"],
@@ -217,37 +222,39 @@ def my_transform(
     return transform
 
 
-class DarkSighDataLoader:
+def DarkSighDataLoader(
+    inc_therm=True,
+    raw_format=True,
+    dataset_dir="./dataset/",
+    batch_size=1,
+    shuffle=True,
+):
     """
     load(self, batch_size=1, shuffle=True):
         Returns:
             dataloader
     """
-
-    def __init__(self, inc_therm=True, raw_format=True):
-        self.dataset_dir = "./dataset/"
-        self.transformed_dataset = DarkSightDataset(
-            self.dataset_dir,
-            transform=my_transform(inc_therm=inc_therm, raw_format=raw_format),
-            raw_format=raw_format,
-        )
-        self.data = list(self.transformed_dataset)
-
-    def load(self, batch_size=1, shuffle=True):
-        dataloader = DataLoader(self.data, batch_size, shuffle=shuffle)
-        return dataloader
+    transformed_dataset = DarkSightDataset(
+        dataset_dir,
+        transform=my_transform(inc_therm=inc_therm, raw_format=raw_format),
+        raw_format=raw_format,
+    )
+    return DataLoader(transformed_dataset, batch_size, shuffle=shuffle)
 
 
 if __name__ == "__main__":
-    data = DarkSighDataLoader().load()
+    data = DarkSighDataLoader()
     data = iter(data)
-    nsamples = 1
+    nsamples = 2
+    f, ax = plt.subplots(nsamples, 2)
     for i in range(nsamples):
         sample_data = next(data)
+        sample_output = sample_data[1]
         sample_img = torch.transpose(torch.transpose(sample_data[0], 1, 3), 1, 2)
 
-        plt.figure()
-        plt.imshow(sample_img.detach().numpy()[0][:, :, :3])
+        print(sample_img.shape)
+        ax[i][0].imshow(sample_img.detach().numpy()[0][:, :, :3])
+        ax[i][1].imshow(sample_output.detach().numpy()[0])
 
         os.chdir("./")
         try:
@@ -256,5 +263,5 @@ if __name__ == "__main__":
             if e.errno != errno.EEXIST:
                 raise
 
-        plt.savefig("./results/augmentation/img{}.png".format(i + 1))
-        plt.show()
+        plt.savefig("./results/augmentation/img.png")
+    plt.show()
