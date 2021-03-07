@@ -116,9 +116,11 @@ def print_arr(arr):
 def arr2heatmap(arr):
 
     # ax = cv2.applyColorMap( (arr * cv2.getTrackbarPos("Scale", "Trackbar")/122).astype('uint8'), cv2.COLORMAP_JET)
-    ax = cv2.applyColorMap((arr * 2.245).astype("uint8"), cv2.COLORMAP_JET)
+    # ax = cv2.applyColorMap((arr * 2.245).astype("uint8"), cv2.COLORMAP_JET)
+    heatmap = cv2.normalize(arr, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
 
-    return ax
+    return heatmap
 
 
 def thermal_process():
@@ -166,31 +168,34 @@ def main():
         tick = time()
         reading = read_sensors(thermalimg_op_size=(480, 360))
 
-        cv2.imshow("Thermal", reading.thermal)
-        cv2.imshow("Normal", reading.normal)
+        try:
+            cv2.imshow("Thermal", reading.thermal)
+            cv2.imshow("Normal", reading.normal)
 
-        # Processing the camera readings
-        op = clahe(reading.normal)
-        cv2.imshow("Output", op)
+            # Processing the camera readings
+            op = clahe(reading.normal)
+            cv2.imshow("Output", op)
 
-        hsvImg = cv2.cvtColor(reading.normal, cv2.COLOR_BGR2HSV)
-        # decreasing the V channel by a factor from the original
-        hsvImg[..., 2] = hsvImg[..., 2] * 0.2
-        cv2.imshow("Darker Input", cv2.cvtColor(hsvImg, cv2.COLOR_HSV2RGB))
+            hsvImg = cv2.cvtColor(reading.normal, cv2.COLOR_BGR2HSV)
+            # decreasing the V channel by a factor from the original
+            hsvImg[..., 2] = hsvImg[..., 2] * 0.2
+            cv2.imshow("Darker Input", cv2.cvtColor(hsvImg, cv2.COLOR_HSV2RGB))
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            print("Exiting...")
-            output_path = os.path.dirname(__file__)
-            cv2.imwrite(os.path.join(output_path, "Thermal image.jpg"), reading.thermal)
-            cv2.imwrite(os.path.join(output_path, "Normal image.jpg"), reading.normal)
-            cv2.imwrite(os.path.join(output_path, "Output image.jpg"), op)
-            cv2.imwrite(
-                os.path.join(output_path, "Darker Normal image.jpg"),
-                cv2.cvtColor(hsvImg, cv2.COLOR_HSV2RGB),
-            )
-            break
-        tock = time()
-        print("FPS: ", 1 / (tock - tick))
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                print("Exiting...")
+                output_path = os.path.dirname(__file__)
+                cv2.imwrite(os.path.join(output_path, "Thermal image.jpg"), reading.thermal)
+                cv2.imwrite(os.path.join(output_path, "Normal image.jpg"), reading.normal)
+                cv2.imwrite(os.path.join(output_path, "Output image.jpg"), op)
+                cv2.imwrite(
+                    os.path.join(output_path, "Darker Normal image.jpg"),
+                    cv2.cvtColor(hsvImg, cv2.COLOR_HSV2RGB),
+                )
+                break
+            tock = time()
+            print("FPS: ", 1 / (tock - tick))
+        except:
+            pass
 
     picam.release()
     cv2.destroyAllWindows()
